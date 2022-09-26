@@ -6,6 +6,9 @@
     <RepositoryUrl>https://github.com/JimGaleForce/GaleForce.SQL</RepositoryUrl>
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Version>1.0.1</Version>
+    <PackageReleaseNotes>fixed float, decimal for values</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,13 +17,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="LICENSE">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
+    <None Include="LICENSE">
+		<Pack>True</Pack>
+		<PackagePath>\</PackagePath>
+	</None>
     <None Update="README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="TestGaleForce.SQL\**" />
+		<EmbeddedResource Remove="TestGaleForce.SQL\**" />
+		<None Remove="TestGaleForce.SQL\**" />
+	</ItemGroup>
 
 </Project>

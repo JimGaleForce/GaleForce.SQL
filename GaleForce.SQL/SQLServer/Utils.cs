@@ -80,6 +80,8 @@ namespace GaleForce.SQL.SQLServer
                 case "int?":
                 case "double?":
                 case "float?":
+                case "decimal":
+                case "decimal?":
 
                     // already in correct format
                     break;
@@ -135,6 +137,30 @@ namespace GaleForce.SQL.SQLServer
                     break;
                 case "bool?":
                     prop.SetValue(newRecord, record.Field<bool?>(prop.Name));
+                    break;
+                case "double":
+                    prop.SetValue(newRecord, record.Field<double>(prop.Name));
+                    break;
+                case "double?":
+                    prop.SetValue(newRecord, record.Field<double?>(prop.Name));
+                    break;
+                case "decimal":
+                case "Decimal":
+                    prop.SetValue(newRecord, record.Field<decimal>(prop.Name));
+                    break;
+                case "decimal?":
+                case "Decimal?":
+                    prop.SetValue(newRecord, record.Field<decimal?>(prop.Name));
+                    break;
+                case "float":
+                case "Float":
+                case "Single":
+                    prop.SetValue(newRecord, record.Field<float>(prop.Name));
+                    break;
+                case "float?":
+                case "Float?":
+                case "Single?":
+                    prop.SetValue(newRecord, record.Field<float?>(prop.Name));
                     break;
             }
         }
