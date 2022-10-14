@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+	<TargetFramework>netstandard2.1</TargetFramework>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/JimGaleForce/GaleForce.SQL</RepositoryUrl>
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.1</Version>
-    <PackageReleaseNotes>fixed float, decimal for values</PackageReleaseNotes>
+    <Version>1.0.2</Version>
+    <PackageReleaseNotes>changed target to .net standard 2.1</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
