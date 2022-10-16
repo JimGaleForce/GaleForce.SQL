@@ -183,6 +183,27 @@ namespace GaleForce.SQL.SQLServer
         }
 
         /// <summary>
+        /// Executes a sql command and returns the count.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="connection">The connection.</param>
+        /// <param name="timeoutSeconds">The timeout in seconds.</param>
+        public static int SqlExecute(string command, string connection, int timeoutSeconds = 500)
+        {
+            var count = 0;
+            using (var conn = new SqlConnection(connection))
+            {
+                conn.Open();
+                var cmdx = new SqlCommand(command, conn);
+                cmdx.CommandTimeout = timeoutSeconds;
+                count = cmdx.ExecuteNonQuery();
+                conn.Close();
+            }
+
+            return count;
+        }
+
+        /// <summary>
         /// Executes a sql command and returns the DataRows as enumerable.
         /// </summary>
         /// <param name="command">The command.</param>

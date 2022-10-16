@@ -46,5 +46,21 @@ namespace GaleForce.SQL.SQLServer
 
             return results;
         }
+
+        /// <summary>
+        /// Executes SQL on a SimpleSqlBuilder, using a connection.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <param name="ssBuilder">The SimpleSqlBuilder builder.</param>
+        /// <param name="connection">The connection.</param>
+        /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
+        public static int ExecuteSQL<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            IEnumerable<TRecord> source,
+            string connection)
+        {
+            var sql = ssBuilder.Build(source);
+            return Utils.SqlExecute(sql, connection);
+        }
     }
 }
