@@ -7,12 +7,12 @@
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.4</Version>
-    <PackageReleaseNotes>retarget .netstandard 2.1</PackageReleaseNotes>
+    <Version>1.0.5</Version>
+    <PackageReleaseNotes>added ExecuteBulkCopy</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GaleForce.Core" Version="1.0.16" />
+    <PackageReference Include="GaleForce.Core" Version="1.0.19" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
   </ItemGroup>
 
