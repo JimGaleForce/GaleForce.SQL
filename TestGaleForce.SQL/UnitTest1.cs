@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Threading.Tasks;
 using GaleForce.SQL.SQLServer;
+using GaleForceCore.Builders;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace TestGaleForce.SQL
@@ -49,21 +53,189 @@ namespace TestGaleForce.SQL
             Assert.AreEqual(true, TestValue<bool>(true), "Bool not interpreted properly");
         }
 
-        // [TestMethod]
-        // public void TestLocalSqlBulkCopy()
-        // {
-        // SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-        // builder.DataSource = "MS-BOSS-JIMGALE\\ML";
-        // builder.InitialCatalog = "LOCALTEST";
-        // builder.IntegratedSecurity = true;
+        private string LocalConnection()
+        {
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = "MACHINE\\DATASOURCE";
+            builder.InitialCatalog = "LOCALTEST";
+            builder.IntegratedSecurity = true;
 
-        // var connection = builder.ConnectionString;
+            return builder.ConnectionString;
+        }
+
+        // [TestMethod]
+        // public async Task TestLocalSqlBulkCopy()
+        // {
+        // var connection = LocalConnection();
 
         // var data = LocalTableRecord.GetData();
-        // var sql = new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
-        // .Insert(l => l.Id, l => l.Str1, l => l.Int1)
-        // .ExecuteBulkCopy(data, connection);
+        // var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+        // .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+        // .ExecuteBulkCopy(connection);
         // }
+
+        // [TestMethod]
+        // public async Task TestLocalSqlBulkCopyFromGeneric()
+        // {
+
+        // var connection = LocalConnection();
+
+        // var context = new SimpleSqlBuilderContext(connection);
+
+        // var data = LocalTableRecord.GetData();
+        // var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+        // .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+        // .UseBulkCopy()
+        // .ExecuteNonQuery(context);
+        // }
+
+        [TestMethod]
+        public async Task TestInsertFromGenericBulkCopy()
+        {
+            var target = new List<LocalTableRecord>();
+            var context = new SimpleSqlBuilderContext();
+            context.SetTable(LocalTableRecord.TableName, target);
+
+            var data = LocalTableRecord.GetData();
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+                .UseBulkCopy()
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(data[0].Id, target[0].Id);
+            Assert.AreEqual(data[1].Id, target[1].Id);
+            Assert.AreEqual(data[2].Id, target[2].Id);
+            Assert.AreNotEqual(data[0].Str2, target[0].Str2);
+            Assert.AreNotEqual(data[1].Str2, target[1].Str2);
+            Assert.AreNotEqual(data[2].Str2, target[2].Str2);
+        }
+
+        [TestMethod]
+        public async Task TestInsertFromGeneric()
+        {
+            var target = new List<LocalTableRecord>();
+            var context = new SimpleSqlBuilderContext();
+            context.SetTable(LocalTableRecord.TableName, target);
+
+            var data = LocalTableRecord.GetData();
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(data[0].Id, target[0].Id);
+            Assert.AreEqual(data[1].Id, target[1].Id);
+            Assert.AreEqual(data[2].Id, target[2].Id);
+            Assert.AreNotEqual(data[0].Str2, target[0].Str2);
+            Assert.AreNotEqual(data[1].Str2, target[1].Str2);
+            Assert.AreNotEqual(data[2].Str2, target[2].Str2);
+        }
+
+        [TestMethod]
+        public async Task TestUpdateFromGeneric()
+        {
+            var target = LocalTableRecord.GetData();
+            var context = new SimpleSqlBuilderContext();
+            context.SetTable(LocalTableRecord.TableName, target);
+
+            var data = LocalTableRecord.GetData();
+            for (var i = 0; i < data.Count; i++)
+            {
+                data[i].Int1 = 1000 + i;
+            }
+
+            Assert.AreNotEqual(data[0].Int1, target[0].Int1);
+            Assert.AreNotEqual(data[1].Int1, target[1].Int1);
+            Assert.AreNotEqual(data[2].Int1, target[2].Int1);
+
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Match(l => l.Id)
+                .Update(data, l => l.Id, l => l.Str1, l => l.Int1)
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(data[0].Int1, target[0].Int1);
+            Assert.AreEqual(data[1].Int1, target[1].Int1);
+            Assert.AreEqual(data[2].Int1, target[2].Int1);
+        }
+
+        [TestMethod]
+        public async Task TestMergeFromGeneric()
+        {
+            var target = LocalTableRecord.GetData();
+            target.RemoveAt(2);
+
+            var context = new SimpleSqlBuilderContext();
+            context.SetTable(LocalTableRecord.TableName, target);
+
+            var source = LocalTableRecord.GetData();
+            for (var i = 0; i < source.Count; i++)
+            {
+                source[i].Int1 = 1000 + i;
+            }
+
+            context.SetTable(LocalTableRecord.TableName + "_temp", source as IEnumerable<LocalTableRecord>);
+
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName + "_temp")
+                .MergeInto(LocalTableRecord.TableName)
+                .Match(l => l.Id)
+                .WhenMatched(s => s.Update(l => l.Id, l => l.Str1, l => l.Int1))
+                .WhenNotMatched(s => s.Insert(l => l.Id, l => l.Str1, l => l.Int1))
+                .ExecuteNonQuery(context);
+
+            var targetSorted = target.OrderBy(t => t.Int1).ToList();
+
+            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(source[0].Int1, targetSorted[0].Int1);
+            Assert.AreEqual(source[1].Int1, targetSorted[1].Int1);
+            Assert.AreEqual(source[2].Int1, targetSorted[2].Int1);
+        }
+
+        [TestMethod]
+        public void TestSelectExecute1()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var data = new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Select(l => l.Id, l => l.Str1, l => l.Int1)
+                .Execute(context)
+                .ToList();
+
+            Assert.AreEqual(3, data.Count());
+            Assert.AreEqual(1, data[0].Id);
+            Assert.AreEqual(2, data[1].Id);
+            Assert.AreEqual(null, data[0].Str2);
+        }
+
+        [TestMethod]
+        public void TestSelectExecute2()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var source2 = LocalTableRecord.GetData();
+            source2[0].Int1 = 100;
+            context.SetTable(LocalTableRecord.TableName + "2", source2);
+
+            var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord>()
+                .From(LocalTableRecord.TableName, LocalTableRecord.TableName + "2")
+                .InnerJoinOn((a, b) => a.Id == b.Id)
+                .Select((a, b) => a.Id, (a, b) => b.Str1, (a, b) => b.Int1)
+                .Execute(context)
+                .ToList();
+
+            Assert.AreEqual(3, data.Count());
+            Assert.AreEqual(1, data[0].Id);
+            Assert.AreEqual(2, data[1].Id);
+            Assert.AreEqual(100, data[0].Int1);
+            Assert.AreEqual(null, data[0].Str2);
+        }
     }
 
     public class TestRecord<T>

@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Reflection;
+using System.Threading.Tasks;
 using GaleForceCore.Helpers;
 
 namespace GaleForce.SQL.SQLServer
@@ -188,16 +189,16 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="command">The command.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="timeoutSeconds">The timeout in seconds.</param>
-        public static int SqlExecute(string command, string connection, int timeoutSeconds = 500)
+        public static async Task<int> SqlExecuteNonQuery(string command, string connection, int timeoutSeconds = 500)
         {
             var count = 0;
             using (var conn = new SqlConnection(connection))
             {
-                conn.Open();
+                await conn.OpenAsync();
                 var cmdx = new SqlCommand(command, conn);
                 cmdx.CommandTimeout = timeoutSeconds;
-                count = cmdx.ExecuteNonQuery();
-                conn.Close();
+                count = await cmdx.ExecuteNonQueryAsync();
+                await conn.CloseAsync();
             }
 
             return count;

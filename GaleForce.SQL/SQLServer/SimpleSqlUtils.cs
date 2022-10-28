@@ -16,6 +16,117 @@ namespace GaleForce.SQL.SQLServer
     public static class SimpleSqlUtils
     {
         /// <summary>
+        /// Executes the specified context, whether local testing data, or actual SQL connection.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the record being accessed.</typeparam>
+        /// <param name="ssBuilder">The simple SQL builder.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
+        public static IEnumerable<TRecord> Execute<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            SimpleSqlBuilderContext context)
+        {
+            if (context.IsLocal)
+            {
+                var tableName = ssBuilder.TableName;
+                var data = context.GetTable<TRecord>(tableName);
+                if (data != null)
+                {
+                    return ssBuilder.Execute(data);
+                }
+
+                return null;
+            }
+            else
+            {
+                return ssBuilder.ExecuteSQL(context.Connection);
+            }
+        }
+
+        public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2>(
+            this SimpleSqlBuilder<TRecord, TRecord1, TRecord2> ssBuilder,
+            SimpleSqlBuilderContext context)
+        {
+            if (context.IsLocal)
+            {
+                if (ssBuilder.TableNames.Length > 1)
+                {
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
+
+                    if (data1 != null && data2 != null)
+                    {
+                        return ssBuilder.Execute(data1, data2);
+                    }
+                }
+
+                return null;
+            }
+            else
+            {
+                return ssBuilder.ExecuteSQL(context.Connection);
+            }
+        }
+
+        public static async Task<int> ExecuteNonQuery<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            SimpleSqlBuilderContext context)
+        {
+            if (context.IsLocal)
+            {
+                // if (ssBuilder.TableNames.Length == 2)
+                // {
+                // var data1 = context.GetTable<TRecord>(ssBuilder.TableNames[0]);
+                // var data2 = context.GetTable<TRecord>(ssBuilder.TableNames[1]);
+                // if (data1 != null && data2 != null)
+                // {
+                // return ssBuilder.ExecuteNonQuery(data2.ToList());
+                // }
+                // else
+                // {
+                // throw new Exception("Empty dataset for non-query");
+                // }
+                // }
+                // else if (ssBuilder.TableNames.Length == 1)
+                // {
+                var data = context.GetList<TRecord>(ssBuilder.TableName);
+                if (data != null)
+                {
+                    IEnumerable<TRecord> source = null;
+                    if (ssBuilder.Command == "MERGE")
+                    {
+                        source = data;
+                        data = context.GetList<TRecord>(ssBuilder.MergeIntoTableName);
+                    }
+
+                    return ssBuilder.ExecuteNonQuery(data, source);
+                }
+                else
+                {
+                    throw new Exception("Empty dataset for non-query");
+                }
+
+                // }
+                // else
+                // {
+                // throw new Exception("Incorrect number of data tables for non-query");
+                // }
+            }
+            else
+            {
+                return await ssBuilder.ExecuteSQLNonQuery(context.Connection);
+            }
+        }
+
+        public static SimpleSqlBuilder<TRecord> UseBulkCopy<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            bool useBulkCopy = true)
+        {
+            ssBuilder.Metadata["UseBulkCopy"] = useBulkCopy;
+            return ssBuilder;
+        }
+
+        /// <summary>
         /// Executes SQL on a SimpleSqlBuilder, using a connection.
         /// </summary>
         /// <typeparam name="TRecord">The type of the record.</typeparam>
@@ -27,6 +138,7 @@ namespace GaleForce.SQL.SQLServer
             string connection)
         {
             var sql = ssBuilder.Build();
+
             var records = Utils.SqlCommandToLinq(sql, connection);
             var results = new List<TRecord>();
 
@@ -59,13 +171,23 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="ssBuilder">The SimpleSqlBuilder builder.</param>
         /// <param name="connection">The connection.</param>
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
-        public static int ExecuteSQL<TRecord>(
+        public static async Task<int> ExecuteSQLNonQuery<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            IEnumerable<TRecord> source,
             string connection)
         {
-            var sql = ssBuilder.Build(source);
-            return Utils.SqlExecute(sql, connection);
+            if (ssBuilder.Command == "INSERT"
+                &&
+                ssBuilder.Metadata.ContainsKey("UseBulkCopy")
+                &&
+                (bool) ssBuilder.Metadata["UseBulkCopy"])
+            {
+                return await ssBuilder.ExecuteBulkCopy(connection);
+            }
+            else
+            {
+                var sql = ssBuilder.Build();
+                return await Utils.SqlExecuteNonQuery(sql, connection);
+            }
         }
 
         /// <summary>
@@ -81,14 +203,19 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>System.Int32.</returns>
         public static async Task<int> ExecuteBulkCopy<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            IEnumerable<TRecord> source,
             string connection,
             int bulkSize = 50000,
             int retries = 3,
             int timeoutInSeconds = 600)
         {
-            var sql = ssBuilder.Build(source);
+            var sql = ssBuilder.Build();
             var fields = ssBuilder.Inserts;
+
+            if (fields.Count == 0)
+            {
+                fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
+            }
+
             var type = typeof(TRecord);
             var props = type.GetProperties();
 
@@ -118,12 +245,13 @@ namespace GaleForce.SQL.SQLServer
                 }
             }
 
+            var source = ssBuilder.SourceData;
             var groupedData = source.ToArray().Split(bulkSize);
 
             var count = 0;
             using (var destConn = new SqlConnection(connection))
             {
-                destConn.Open();
+                await destConn.OpenAsync();
                 var bulkCopy = new SqlBulkCopy(destConn)
                 {
                     DestinationTableName = ssBuilder.TableName,
@@ -167,7 +295,7 @@ namespace GaleForce.SQL.SQLServer
                     count += dt.Rows.Count;
                 }
 
-                destConn.Close();
+                await destConn.CloseAsync();
             }
 
             return count;
