@@ -236,6 +236,27 @@ namespace TestGaleForce.SQL
             Assert.AreEqual(100, data[0].Int1);
             Assert.AreEqual(null, data[0].Str2);
         }
+
+        [TestMethod]
+
+        public async Task TestMergeCommand()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            context.SetTable("Destination", new List<LocalTableRecord>());
+
+            var updatedLocalRecords = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .MergeInto("Destination")
+                .Match((t, p) => t.Id == p.Id)
+                .WhenMatched(
+                    s => s.Update(p => p.Str1))
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(0, updatedLocalRecords); //empty data set, nothing to update.
+        }
     }
 
     public class TestRecord<T>

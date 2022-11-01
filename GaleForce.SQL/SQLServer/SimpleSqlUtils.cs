@@ -1,4 +1,9 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------
+// <copyright file="SimpleSqlUtils.cs" company="Gale-Force, LLC">
+// Copyright (C) Gale-Force, LLC. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -43,6 +48,15 @@ namespace GaleForce.SQL.SQLServer
             }
         }
 
+        /// <summary>
+        /// Executes the specified context.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <typeparam name="TRecord1">The type of the t record1.</typeparam>
+        /// <typeparam name="TRecord2">The type of the t record2.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2>(
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2> ssBuilder,
             SimpleSqlBuilderContext context)
@@ -68,27 +82,20 @@ namespace GaleForce.SQL.SQLServer
             }
         }
 
+        /// <summary>
+        /// Executes the non query.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>System.Int32.</returns>
+        /// <exception cref="GaleForce.SQL.SQLServer.MissingDataTableException"></exception>
         public static async Task<int> ExecuteNonQuery<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             SimpleSqlBuilderContext context)
         {
             if (context.IsLocal)
             {
-                // if (ssBuilder.TableNames.Length == 2)
-                // {
-                // var data1 = context.GetTable<TRecord>(ssBuilder.TableNames[0]);
-                // var data2 = context.GetTable<TRecord>(ssBuilder.TableNames[1]);
-                // if (data1 != null && data2 != null)
-                // {
-                // return ssBuilder.ExecuteNonQuery(data2.ToList());
-                // }
-                // else
-                // {
-                // throw new Exception("Empty dataset for non-query");
-                // }
-                // }
-                // else if (ssBuilder.TableNames.Length == 1)
-                // {
                 var data = context.GetList<TRecord>(ssBuilder.TableName);
                 if (data != null)
                 {
@@ -97,20 +104,21 @@ namespace GaleForce.SQL.SQLServer
                     {
                         source = data;
                         data = context.GetList<TRecord>(ssBuilder.MergeIntoTableName);
+
+                        if (data == null)
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.MergeIntoTableName} needs to exist to merge into for testing");
+                        }
                     }
 
                     return ssBuilder.ExecuteNonQuery(data, source);
                 }
                 else
                 {
-                    throw new Exception("Empty dataset for non-query");
+                    throw new MissingDataTableException(
+                        $"{ssBuilder.TableName} needs to exist to for testing non-query");
                 }
-
-                // }
-                // else
-                // {
-                // throw new Exception("Incorrect number of data tables for non-query");
-                // }
             }
             else
             {
@@ -118,6 +126,13 @@ namespace GaleForce.SQL.SQLServer
             }
         }
 
+        /// <summary>
+        /// Uses the bulk copy.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="useBulkCopy">if set to <c>true</c> [use bulk copy].</param>
+        /// <returns>SimpleSqlBuilder&lt;TRecord&gt;.</returns>
         public static SimpleSqlBuilder<TRecord> UseBulkCopy<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             bool useBulkCopy = true)
@@ -195,7 +210,6 @@ namespace GaleForce.SQL.SQLServer
         /// </summary>
         /// <typeparam name="TRecord">The type of the t record.</typeparam>
         /// <param name="ssBuilder">The ss builder.</param>
-        /// <param name="source">The source dataset/records.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="bulkSize">Size of the bulk.</param>
         /// <param name="retries">The retries.</param>
