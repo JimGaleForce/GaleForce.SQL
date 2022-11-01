@@ -115,5 +115,17 @@ namespace GaleForce.SQL.SQLServer
             this.IsLocal = true;
             this.SetContextTable<T>(tableName, new SimpleSqlBuilderContextTable<T>(tableName, records));
         }
+
+        /// <summary>
+        /// Determines whether the specified table list has a named table.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <returns>
+        /// <c>true</c> if the specified table name has table; otherwise, <c>false</c>.
+        /// </returns>
+        public bool HasTable(string tableName)
+        {
+            return this.Tables.ContainsKey(tableName);
+        }
     }
 }
