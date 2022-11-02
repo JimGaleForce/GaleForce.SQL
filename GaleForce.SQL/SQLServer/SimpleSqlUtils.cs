@@ -108,7 +108,7 @@ namespace GaleForce.SQL.SQLServer
                         if (data == null)
                         {
                             throw new MissingDataTableException(
-                                $"{ssBuilder.MergeIntoTableName} needs to exist to merge into for testing");
+                                $"{ssBuilder.MergeIntoTableName} needs to exist as a List<{typeof(TRecord).Name}> to merge into for testing");
                         }
                     }
 
@@ -117,7 +117,7 @@ namespace GaleForce.SQL.SQLServer
                 else
                 {
                     throw new MissingDataTableException(
-                        $"{ssBuilder.TableName} needs to exist to for testing non-query");
+                        $"{ssBuilder.TableName} needs to exist for testing a non-query");
                 }
             }
             else
