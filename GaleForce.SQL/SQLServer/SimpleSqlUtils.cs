@@ -39,8 +39,11 @@ namespace GaleForce.SQL.SQLServer
                 {
                     return ssBuilder.Execute(data);
                 }
-
-                return null;
+                else
+                {
+                    throw new MissingDataTableException(
+                        $"{tableName} needs to exist for testing in SimpleSqlBuilder");
+                }
             }
             else
             {
@@ -68,13 +71,23 @@ namespace GaleForce.SQL.SQLServer
                     var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
                     var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
 
-                    if (data1 != null && data2 != null)
+                    if (data1 == null)
                     {
-                        return ssBuilder.Execute(data1, data2);
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
                     }
+
+                    if (data2 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    return ssBuilder.Execute(data1, data2);
                 }
 
-                return null;
+                throw new MissingDataTableException(
+                    $"2 From tables are required for testing in a 2 source-table SimpleSqlBuilder<T,T1,T2>");
             }
             else
             {
@@ -108,7 +121,7 @@ namespace GaleForce.SQL.SQLServer
                         if (data == null)
                         {
                             throw new MissingDataTableException(
-                                $"{ssBuilder.MergeIntoTableName} needs to exist as a List<{typeof(TRecord).Name}> to merge into for testing");
+                                $"{ssBuilder.MergeIntoTableName} needs to exist as a List<{typeof(TRecord).Name}> to merge into for testing in SimpleSqlBuilder");
                         }
                     }
 
@@ -117,7 +130,7 @@ namespace GaleForce.SQL.SQLServer
                 else
                 {
                     throw new MissingDataTableException(
-                        $"{ssBuilder.TableName} needs to exist for testing a non-query");
+                        $"{ssBuilder.TableName} needs to exist for testing in SimpleSqlBuilder");
                 }
             }
             else
