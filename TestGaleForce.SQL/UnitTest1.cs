@@ -64,6 +64,19 @@ namespace TestGaleForce.SQL
         }
 
         // [TestMethod]
+        // public void TestLocalParams()
+        // {
+        // var connection = this.LocalConnection();
+        // var context = new SimpleSqlBuilderContext(connection);
+        // var options = new SimpleSqlBuilderOptions { UseParameters = true };
+
+        // var sql = new SimpleSqlBuilder<LocalTableRecord>(options, LocalTableRecord.TableName)
+        // .Select(l => l.Str1, l => l.Int1)
+        // .Where(l => l.Str2 == "four" || l.Str2 == "five")
+        // .Execute(context);
+        // }
+
+        // [TestMethod]
         // public async Task TestLocalSqlBulkCopy()
         // {
         // var connection = LocalConnection();

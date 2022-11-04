@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Reflection;
@@ -178,9 +179,15 @@ namespace GaleForce.SQL.SQLServer
             string command,
             string connection,
             int timeoutSeconds = 500,
-            bool retryIfTransportError = true)
+            bool retryIfTransportError = true,
+            Dictionary<string, object> parameters = null)
         {
-            return SqlCommandToLinq(command, new SqlConnection(connection), timeoutSeconds, retryIfTransportError);
+            return SqlCommandToLinq(
+                command,
+                new SqlConnection(connection),
+                timeoutSeconds,
+                retryIfTransportError,
+                parameters: parameters);
         }
 
         /// <summary>
@@ -189,13 +196,25 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="command">The command.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="timeoutSeconds">The timeout in seconds.</param>
-        public static async Task<int> SqlExecuteNonQuery(string command, string connection, int timeoutSeconds = 500)
+        public static async Task<int> SqlExecuteNonQuery(
+            string command,
+            string connection,
+            int timeoutSeconds = 500,
+            Dictionary<string, object> parameters = null)
         {
             var count = 0;
             using (var conn = new SqlConnection(connection))
             {
                 await conn.OpenAsync();
                 var cmdx = new SqlCommand(command, conn);
+                if (parameters != null)
+                {
+                    foreach (var parm in parameters)
+                    {
+                        cmdx.Parameters.AddWithValue(parm.Key, parm.Value);
+                    }
+                }
+
                 cmdx.CommandTimeout = timeoutSeconds;
                 count = await cmdx.ExecuteNonQueryAsync();
                 await conn.CloseAsync();
@@ -216,9 +235,18 @@ namespace GaleForce.SQL.SQLServer
             string command,
             SqlConnection connection,
             int timeoutSeconds = 500,
-            bool retryIfTransportError = true)
+            bool retryIfTransportError = true,
+            Dictionary<string, object> parameters = null)
         {
             var cmd = new SqlCommand(command, connection);
+            if (parameters != null)
+            {
+                foreach (var parm in parameters)
+                {
+                    cmd.Parameters.AddWithValue(parm.Key, parm.Value);
+                }
+            }
+
             cmd.CommandTimeout = timeoutSeconds;
             var dt = new DataSet();
 

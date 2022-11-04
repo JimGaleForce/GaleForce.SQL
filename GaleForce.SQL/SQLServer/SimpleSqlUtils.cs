@@ -167,7 +167,10 @@ namespace GaleForce.SQL.SQLServer
         {
             var sql = ssBuilder.Build();
 
-            var records = Utils.SqlCommandToLinq(sql, connection);
+            var records = Utils.SqlCommandToLinq(
+                sql,
+                connection,
+                parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
             var results = new List<TRecord>();
 
             var type = typeof(TRecord);
@@ -214,7 +217,10 @@ namespace GaleForce.SQL.SQLServer
             else
             {
                 var sql = ssBuilder.Build();
-                return await Utils.SqlExecuteNonQuery(sql, connection);
+                return await Utils.SqlExecuteNonQuery(
+                    sql,
+                    connection,
+                    parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
             }
         }
 
@@ -282,7 +288,7 @@ namespace GaleForce.SQL.SQLServer
                 var bulkCopy = new SqlBulkCopy(destConn)
                 {
                     DestinationTableName = ssBuilder.TableName,
-                    BulkCopyTimeout = timeoutInSeconds
+                    BulkCopyTimeout = timeoutInSeconds                   
                 };
 
                 foreach (var group in groupedData)
