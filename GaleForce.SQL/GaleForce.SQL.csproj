@@ -7,12 +7,12 @@
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.9.1</Version>
-    <PackageReleaseNotes>allows @Params to be used in sql execution</PackageReleaseNotes>
+    <Version>1.0.9.2</Version>
+    <PackageReleaseNotes>fixes smae named tables in joins - renames internally</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GaleForce.Core" Version="1.0.27.4" />
+    <PackageReference Include="GaleForce.Core" Version="1.0.27.5" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
   </ItemGroup>
 

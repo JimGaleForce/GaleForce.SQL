@@ -64,6 +64,26 @@ namespace TestGaleForce.SQL
         }
 
         // [TestMethod]
+        // public void TestAllAsFields()
+        // {
+        // var connection = this.LocalConnection();
+        // var context = new SimpleSqlBuilderContext(connection);
+
+        // var actualx = new SimpleSqlBuilder<LocalNewTableRecord, LocalTableRecord, LocalTableRecord>()
+        // .From(LocalTableRecord.TableName, LocalTableRecord.TableName)
+        // .SelectAs(tu => tu.StringX, (t1, t3) => t3.Str1)
+        // .SelectAs(tu => tu.IntX, (t1, t3) => t1.Int1)
+        // .InnerJoinOn((t1, t3) => t1.Int1 == t3.Int1)
+        // .Where((t1, t3) => t1.Int1 % 2 == 1);
+
+        // var build = actualx.Build();
+
+        // var actual = actualx.Execute(context);
+
+        // var i = 0;
+        // }
+
+        // [TestMethod]
         // public void TestLocalParams()
         // {
         // var connection = this.LocalConnection();
@@ -275,6 +295,13 @@ namespace TestGaleForce.SQL
     public class TestRecord<T>
     {
         public T Value { get; set; }
+    }
+
+    public class LocalNewTableRecord
+    {
+        public string StringX { get; set; }
+
+        public int IntX { get; set; }
     }
 
     public class LocalTableRecord
