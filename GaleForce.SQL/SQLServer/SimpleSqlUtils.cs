@@ -110,7 +110,7 @@ namespace GaleForce.SQL.SQLServer
         {
             if (context.IsLocal)
             {
-                if (ssBuilder.TableNames.Length > 1)
+                if (ssBuilder.TableNames.Length > 2)
                 {
                     var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
                     var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
@@ -138,7 +138,7 @@ namespace GaleForce.SQL.SQLServer
                 }
 
                 throw new MissingDataTableException(
-                    $"2 From tables are required for testing in a 2 source-table SimpleSqlBuilder<T,T1,T2>");
+                    $"3 From tables are required for testing in a 3 source-table SimpleSqlBuilder<T,T1,T2>");
             }
             else
             {
@@ -161,7 +161,7 @@ namespace GaleForce.SQL.SQLServer
         {
             if (context.IsLocal)
             {
-                if (ssBuilder.TableNames.Length > 1)
+                if (ssBuilder.TableNames.Length > 3)
                 {
                     var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
                     var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
@@ -196,7 +196,7 @@ namespace GaleForce.SQL.SQLServer
                 }
 
                 throw new MissingDataTableException(
-                    $"2 From tables are required for testing in a 2 source-table SimpleSqlBuilder<T,T1,T2>");
+                    $"4 From tables are required for testing in a 4 source-table SimpleSqlBuilder<T,T1,T2>");
             }
             else
             {

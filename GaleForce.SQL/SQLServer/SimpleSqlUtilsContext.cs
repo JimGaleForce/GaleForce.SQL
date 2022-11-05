@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 namespace GaleForce.SQL.SQLServer
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -68,6 +69,11 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;T&gt;.</returns>
         public SimpleSqlBuilderContextTable<T> GetContextTable<T>(string tableName)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             return this.Tables.ContainsKey(tableName) ? this.Tables[tableName] as SimpleSqlBuilderContextTable<T> : null;
         }
 
@@ -79,6 +85,11 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="contextTable">The records.</param>
         public void SetContextTable<T>(string tableName, SimpleSqlBuilderContextTable<T> contextTable)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             this.Tables[tableName] = contextTable;
         }
 
@@ -90,6 +101,11 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;T&gt;.</returns>
         public IEnumerable<T> GetTable<T>(string tableName)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             return this.GetContextTable<T>(tableName)?.Data;
         }
 
@@ -101,6 +117,11 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;T&gt;.</returns>
         public List<T> GetList<T>(string tableName)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             return this.GetContextTable<T>(tableName)?.Data as List<T>;
         }
 
@@ -112,6 +133,11 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="records">The records.</param>
         public void SetTable<T>(string tableName, IEnumerable<T> records)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             this.IsLocal = true;
             this.SetContextTable<T>(tableName, new SimpleSqlBuilderContextTable<T>(tableName, records));
         }
@@ -125,6 +151,11 @@ namespace GaleForce.SQL.SQLServer
         /// </returns>
         public bool HasTable(string tableName)
         {
+            if (tableName == null)
+            {
+                throw new ArgumentNullException("TableName is null");
+            }
+
             return this.Tables.ContainsKey(tableName);
         }
     }
