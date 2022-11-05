@@ -271,6 +271,77 @@ namespace TestGaleForce.SQL
         }
 
         [TestMethod]
+        public void TestSelectExecute3()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var source2 = LocalTableRecord.GetData();
+            source2[0].Int1 = 100;
+            context.SetTable(LocalTableRecord.TableName + "2", source2);
+
+            var source3 = LocalTableRecord.GetData();
+            source3[0].Int1 = 200;
+            context.SetTable(LocalTableRecord.TableName + "3", source3);
+
+            var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord>()
+                .From(LocalTableRecord.TableName, LocalTableRecord.TableName + "2", LocalTableRecord.TableName + "3")
+                .InnerJoin12On((a, b) => a.Id == b.Id)
+                .InnerJoin13On((a, b) => a.Id == b.Id)
+                .Select((a, b, c) => a.Id, (a, b, c) => b.Str1, (a, b, c) => c.Int1)
+                .Execute(context)
+                .ToList();
+
+            Assert.AreEqual(3, data.Count());
+            Assert.AreEqual(1, data[0].Id);
+            Assert.AreEqual(2, data[1].Id);
+            Assert.AreEqual(200, data[0].Int1);
+            Assert.AreEqual(null, data[0].Str2);
+        }
+
+        [TestMethod]
+        public void TestSelectExecute4()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var source2 = LocalTableRecord.GetData();
+            source2[0].Int1 = 100;
+            context.SetTable(LocalTableRecord.TableName + "2", source2);
+
+            var source3 = LocalTableRecord.GetData();
+            source3[0].Int1 = 200;
+            context.SetTable(LocalTableRecord.TableName + "3", source3);
+
+            var source4 = LocalTableRecord.GetData();
+            source4[0].Int1 = 300;
+            context.SetTable(LocalTableRecord.TableName + "4", source4);
+
+            var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord>()
+                .From(
+                    LocalTableRecord.TableName,
+                    LocalTableRecord.TableName + "2",
+                    LocalTableRecord.TableName + "3",
+                    LocalTableRecord.TableName + "4")
+                .InnerJoin12On((a, b) => a.Id == b.Id)
+                .InnerJoin13On((a, b) => a.Id == b.Id)
+                .InnerJoin14On((a, b) => a.Id == b.Id)
+                .Select((a, b, c, d) => a.Id, (a, b, c, d) => b.Str1, (a, b, c, d) => d.Int1)
+                .Execute(context)
+                .ToList();
+
+            Assert.AreEqual(3, data.Count());
+            Assert.AreEqual(1, data[0].Id);
+            Assert.AreEqual(2, data[1].Id);
+            Assert.AreEqual(300, data[0].Int1);
+            Assert.AreEqual(null, data[0].Str2);
+        }
+
+        [TestMethod]
 
         public async Task TestMergeCommand()
         {

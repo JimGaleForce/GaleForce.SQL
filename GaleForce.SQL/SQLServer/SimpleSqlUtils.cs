@@ -96,6 +96,115 @@ namespace GaleForce.SQL.SQLServer
         }
 
         /// <summary>
+        /// Executes the specified context.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <typeparam name="TRecord1">The type of the t record1.</typeparam>
+        /// <typeparam name="TRecord2">The type of the t record2.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
+        public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2, TRecord3>(
+            this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3> ssBuilder,
+            SimpleSqlBuilderContext context)
+        {
+            if (context.IsLocal)
+            {
+                if (ssBuilder.TableNames.Length > 1)
+                {
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
+                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]);
+
+                    if (data1 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    if (data2 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    if (data3 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    return ssBuilder.Execute(data1, data2, data3);
+                }
+
+                throw new MissingDataTableException(
+                    $"2 From tables are required for testing in a 2 source-table SimpleSqlBuilder<T,T1,T2>");
+            }
+            else
+            {
+                return ssBuilder.ExecuteSQL(context.Connection);
+            }
+        }
+
+        /// <summary>
+        /// Executes the specified context.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <typeparam name="TRecord1">The type of the t record1.</typeparam>
+        /// <typeparam name="TRecord2">The type of the t record2.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
+        public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2, TRecord3, TRecord4>(
+            this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3, TRecord4> ssBuilder,
+            SimpleSqlBuilderContext context)
+        {
+            if (context.IsLocal)
+            {
+                if (ssBuilder.TableNames.Length > 1)
+                {
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
+                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]);
+                    var data4 = context.GetTable<TRecord4>(ssBuilder.TableNames[3]);
+
+                    if (data1 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    if (data2 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    if (data3 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    if (data4 == null)
+                    {
+                        throw new MissingDataTableException(
+                            $"{ssBuilder.TableNames[3]} needs to exist for testing in SimpleSqlBuilder");
+                    }
+
+                    return ssBuilder.Execute(data1, data2, data3, data4);
+                }
+
+                throw new MissingDataTableException(
+                    $"2 From tables are required for testing in a 2 source-table SimpleSqlBuilder<T,T1,T2>");
+            }
+            else
+            {
+                return ssBuilder.ExecuteSQL(context.Connection);
+            }
+        }
+
+        /// <summary>
         /// Executes the non query.
         /// </summary>
         /// <typeparam name="TRecord">The type of the t record.</typeparam>
