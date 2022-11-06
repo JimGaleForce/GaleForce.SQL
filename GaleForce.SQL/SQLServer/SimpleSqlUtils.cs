@@ -68,8 +68,10 @@ namespace GaleForce.SQL.SQLServer
             {
                 if (ssBuilder.TableNames.Length > 1)
                 {
-                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
-                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]) ??
+                        context.GetTable<TRecord1>(ssBuilder.TableNamesActual[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]) ??
+                        context.GetTable<TRecord2>(ssBuilder.TableNamesActual[1]);
 
                     if (data1 == null)
                     {
@@ -112,9 +114,12 @@ namespace GaleForce.SQL.SQLServer
             {
                 if (ssBuilder.TableNames.Length > 2)
                 {
-                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
-                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
-                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]);
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]) ??
+                        context.GetTable<TRecord1>(ssBuilder.TableNamesActual[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]) ??
+                        context.GetTable<TRecord2>(ssBuilder.TableNamesActual[1]);
+                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]) ??
+                        context.GetTable<TRecord3>(ssBuilder.TableNamesActual[2]);
 
                     if (data1 == null)
                     {
@@ -163,10 +168,14 @@ namespace GaleForce.SQL.SQLServer
             {
                 if (ssBuilder.TableNames.Length > 3)
                 {
-                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]);
-                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]);
-                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]);
-                    var data4 = context.GetTable<TRecord4>(ssBuilder.TableNames[3]);
+                    var data1 = context.GetTable<TRecord1>(ssBuilder.TableNames[0]) ??
+                        context.GetTable<TRecord1>(ssBuilder.TableNamesActual[0]);
+                    var data2 = context.GetTable<TRecord2>(ssBuilder.TableNames[1]) ??
+                        context.GetTable<TRecord2>(ssBuilder.TableNamesActual[1]);
+                    var data3 = context.GetTable<TRecord3>(ssBuilder.TableNames[2]) ??
+                        context.GetTable<TRecord3>(ssBuilder.TableNamesActual[2]);
+                    var data4 = context.GetTable<TRecord4>(ssBuilder.TableNames[3]) ??
+                        context.GetTable<TRecord4>(ssBuilder.TableNamesActual[3]);
 
                     if (data1 == null)
                     {
