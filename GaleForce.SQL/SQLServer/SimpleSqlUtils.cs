@@ -419,7 +419,7 @@ namespace GaleForce.SQL.SQLServer
             int timeoutInSeconds = 600,
             StageLogger log = null)
         {
-            var sql = ssBuilder.Build();
+            var sql = "--bulkcopy:" + ssBuilder.SourceData.GetHashCode();
             using (var sqllog = log?.Item("sql.bulkcopy." + sql.GetHashCode(), "SQL"))
             {
                 sqllog?.AddEvent("SQL", sql);
