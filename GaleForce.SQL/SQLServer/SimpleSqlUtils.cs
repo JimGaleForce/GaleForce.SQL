@@ -111,7 +111,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log);
             }
         }
 
@@ -174,7 +174,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log);
             }
         }
 
@@ -245,7 +245,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log);
             }
         }
 
@@ -298,7 +298,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return await ssBuilder.ExecuteSQLNonQuery(context.Connection);
+                return await ssBuilder.ExecuteSQLNonQuery(context.Connection, log: log);
             }
         }
 
