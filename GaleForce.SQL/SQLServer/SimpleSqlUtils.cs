@@ -351,8 +351,6 @@ namespace GaleForce.SQL.SQLServer
                         var field = originalField.Contains(".")
                             ? originalField.Substring(originalField.IndexOf(".") + 1)
                             : originalField;
-                        Console.WriteLine(field);
-
                         var asField = field.Contains(" AS ") ? field.Substring(field.IndexOf(" AS ") + 4) : field;
 
                         var prop = props.FirstOrDefault(p => p.Name == asField);
