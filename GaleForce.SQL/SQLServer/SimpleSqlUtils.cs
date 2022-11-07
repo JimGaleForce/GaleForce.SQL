@@ -74,6 +74,7 @@ namespace GaleForce.SQL.SQLServer
             SimpleSqlBuilderContext context,
             StageLogger log = null)
         {
+            log = log ?? context.StageLogger;
             if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 1)
@@ -128,6 +129,7 @@ namespace GaleForce.SQL.SQLServer
             SimpleSqlBuilderContext context,
             StageLogger log = null)
         {
+            log = log ?? context.StageLogger;
             if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 2)
@@ -190,6 +192,7 @@ namespace GaleForce.SQL.SQLServer
             SimpleSqlBuilderContext context,
             StageLogger log = null)
         {
+            log = log ?? context.StageLogger;
             if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 3)
@@ -259,6 +262,7 @@ namespace GaleForce.SQL.SQLServer
             SimpleSqlBuilderContext context,
             StageLogger log = null)
         {
+            log = log ?? context.StageLogger;
             if (context.IsTesting)
             {
                 var data = context.GetList<TRecord>(ssBuilder.TableName);
