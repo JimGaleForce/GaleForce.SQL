@@ -7,8 +7,8 @@
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.10.9</Version>
-    <PackageReleaseNotes>prevents build for bulkcopy use</PackageReleaseNotes>
+    <Version>1.0.10.10</Version>
+    <PackageReleaseNotes>added missing default log in single table execute</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

@@ -33,6 +33,7 @@ namespace GaleForce.SQL.SQLServer
             SimpleSqlBuilderContext context,
             StageLogger log = null)
         {
+            log = log ?? context.StageLogger;
             if (context.IsTesting)
             {
                 var tableName = ssBuilder.TableName;
