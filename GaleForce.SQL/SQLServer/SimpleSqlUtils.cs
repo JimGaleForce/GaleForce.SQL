@@ -30,7 +30,8 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> Execute<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            SimpleSqlBuilderContext context)
+            SimpleSqlBuilderContext context,
+            StageLogger log = null)
         {
             if (context.IsTesting)
             {
@@ -38,7 +39,14 @@ namespace GaleForce.SQL.SQLServer
                 var data = context.GetTable<TRecord>(tableName);
                 if (data != null)
                 {
-                    return ssBuilder.Execute(data);
+                    var sql = ssBuilder.Build();
+                    using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
+                    {
+                        sqllog?.AddEvent("SQL", sql);
+                        var result = ssBuilder.Execute(data);
+                        sqllog?.AddMetric("SQLCount", result.Count());
+                        return result;
+                    }
                 }
                 else
                 {
@@ -48,7 +56,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log);
             }
         }
 
@@ -63,7 +71,8 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2>(
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2> ssBuilder,
-            SimpleSqlBuilderContext context)
+            SimpleSqlBuilderContext context,
+            StageLogger log = null)
         {
             if (context.IsTesting)
             {
@@ -86,7 +95,14 @@ namespace GaleForce.SQL.SQLServer
                             $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
                     }
 
-                    return ssBuilder.Execute(data1, data2);
+                    var sql = ssBuilder.Build();
+                    using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
+                    {
+                        sqllog?.AddEvent("SQL", sql);
+                        var result = ssBuilder.Execute(data1, data2);
+                        sqllog?.AddMetric("SQLCount", result.Count());
+                        return result;
+                    }
                 }
 
                 throw new MissingDataTableException(
@@ -109,7 +125,8 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2, TRecord3>(
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3> ssBuilder,
-            SimpleSqlBuilderContext context)
+            SimpleSqlBuilderContext context,
+            StageLogger log = null)
         {
             if (context.IsTesting)
             {
@@ -140,7 +157,14 @@ namespace GaleForce.SQL.SQLServer
                             $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
                     }
 
-                    return ssBuilder.Execute(data1, data2, data3);
+                    var sql = ssBuilder.Build();
+                    using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
+                    {
+                        sqllog?.AddEvent("SQL", sql);
+                        var result = ssBuilder.Execute(data1, data2, data3);
+                        sqllog?.AddMetric("SQLCount", result.Count());
+                        return result;
+                    }
                 }
 
                 throw new MissingDataTableException(
@@ -163,7 +187,8 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> Execute<TRecord, TRecord1, TRecord2, TRecord3, TRecord4>(
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3, TRecord4> ssBuilder,
-            SimpleSqlBuilderContext context)
+            SimpleSqlBuilderContext context,
+            StageLogger log = null)
         {
             if (context.IsTesting)
             {
@@ -202,7 +227,14 @@ namespace GaleForce.SQL.SQLServer
                             $"{ssBuilder.TableNames[3]} needs to exist for testing in SimpleSqlBuilder");
                     }
 
-                    return ssBuilder.Execute(data1, data2, data3, data4);
+                    var sql = ssBuilder.Build();
+                    using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
+                    {
+                        sqllog?.AddEvent("SQL", sql);
+                        var result = ssBuilder.Execute(data1, data2, data3, data4);
+                        sqllog?.AddMetric("SQLCount", result.Count());
+                        return result;
+                    }
                 }
 
                 throw new MissingDataTableException(
@@ -224,7 +256,8 @@ namespace GaleForce.SQL.SQLServer
         /// <exception cref="GaleForce.SQL.SQLServer.MissingDataTableException"></exception>
         public static async Task<int> ExecuteNonQuery<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            SimpleSqlBuilderContext context)
+            SimpleSqlBuilderContext context,
+            StageLogger log = null)
         {
             if (context.IsTesting)
             {
@@ -244,7 +277,14 @@ namespace GaleForce.SQL.SQLServer
                         }
                     }
 
-                    return ssBuilder.ExecuteNonQuery(data, source);
+                    var sql = ssBuilder.Build();
+                    using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
+                    {
+                        sqllog?.AddEvent("SQL", sql);
+                        var result = ssBuilder.ExecuteNonQuery(data, source);
+                        sqllog?.AddMetric("SQLCount", result);
+                        return result;
+                    }
                 }
                 else
                 {
