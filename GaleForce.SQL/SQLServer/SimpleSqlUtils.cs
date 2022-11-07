@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using GaleForceCore.Builders;
 using GaleForceCore.Helpers;
+using GaleForceCore.Logger;
 
 namespace GaleForce.SQL.SQLServer
 {
@@ -31,7 +32,7 @@ namespace GaleForce.SQL.SQLServer
             this SimpleSqlBuilder<TRecord> ssBuilder,
             SimpleSqlBuilderContext context)
         {
-            if (context.IsLocal)
+            if (context.IsTesting)
             {
                 var tableName = ssBuilder.TableName;
                 var data = context.GetTable<TRecord>(tableName);
@@ -64,7 +65,7 @@ namespace GaleForce.SQL.SQLServer
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2> ssBuilder,
             SimpleSqlBuilderContext context)
         {
-            if (context.IsLocal)
+            if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 1)
                 {
@@ -110,7 +111,7 @@ namespace GaleForce.SQL.SQLServer
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3> ssBuilder,
             SimpleSqlBuilderContext context)
         {
-            if (context.IsLocal)
+            if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 2)
                 {
@@ -164,7 +165,7 @@ namespace GaleForce.SQL.SQLServer
             this SimpleSqlBuilder<TRecord, TRecord1, TRecord2, TRecord3, TRecord4> ssBuilder,
             SimpleSqlBuilderContext context)
         {
-            if (context.IsLocal)
+            if (context.IsTesting)
             {
                 if (ssBuilder.TableNames.Length > 3)
                 {
@@ -225,7 +226,7 @@ namespace GaleForce.SQL.SQLServer
             this SimpleSqlBuilder<TRecord> ssBuilder,
             SimpleSqlBuilderContext context)
         {
-            if (context.IsLocal)
+            if (context.IsTesting)
             {
                 var data = context.GetList<TRecord>(ssBuilder.TableName);
                 if (data != null)
@@ -281,40 +282,45 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static IEnumerable<TRecord> ExecuteSQL<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            string connection)
+            string connection,
+            StageLogger log = null)
         {
             var sql = ssBuilder.Build();
-
-            var records = Utils.SqlCommandToLinq(
-                sql,
-                connection,
-                parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
-            var results = new List<TRecord>();
-
-            var type = typeof(TRecord);
-            var props = type.GetProperties();
-            var fields = ssBuilder.Fields;
-
-            foreach (var record in records)
+            using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
             {
-                var newRecord = (TRecord)Activator.CreateInstance(type);
-                foreach (var originalField in fields)
+                sqllog?.AddEvent("SQL", sql);
+                var records = Utils.SqlCommandToLinq(
+                    sql,
+                    connection,
+                    parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                var results = new List<TRecord>();
+
+                var type = typeof(TRecord);
+                var props = type.GetProperties();
+                var fields = ssBuilder.Fields;
+
+                foreach (var record in records)
                 {
-                    var field = originalField.Contains(".")
-                        ? originalField.Substring(originalField.IndexOf(".") + 1)
-                        : originalField;
-                    Console.WriteLine(field);
+                    var newRecord = (TRecord)Activator.CreateInstance(type);
+                    foreach (var originalField in fields)
+                    {
+                        var field = originalField.Contains(".")
+                            ? originalField.Substring(originalField.IndexOf(".") + 1)
+                            : originalField;
+                        Console.WriteLine(field);
 
-                    var asField = field.Contains(" AS ") ? field.Substring(field.IndexOf(" AS ") + 4) : field;
+                        var asField = field.Contains(" AS ") ? field.Substring(field.IndexOf(" AS ") + 4) : field;
 
-                    var prop = props.FirstOrDefault(p => p.Name == asField);
-                    Utils.SetValue<TRecord>(record, newRecord, prop);
+                        var prop = props.FirstOrDefault(p => p.Name == asField);
+                        Utils.SetValue<TRecord>(record, newRecord, prop);
+                    }
+
+                    results.Add(newRecord);
                 }
 
-                results.Add(newRecord);
+                sqllog?.AddMetric("SQLCount", results.Count());
+                return results;
             }
-
-            return results;
         }
 
         /// <summary>
@@ -326,7 +332,8 @@ namespace GaleForce.SQL.SQLServer
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
         public static async Task<int> ExecuteSQLNonQuery<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
-            string connection)
+            string connection,
+            StageLogger log = null)
         {
             if (ssBuilder.Command == "INSERT"
                 &&
@@ -334,15 +341,21 @@ namespace GaleForce.SQL.SQLServer
                 &&
                 (bool) ssBuilder.Metadata["UseBulkCopy"])
             {
-                return await ssBuilder.ExecuteBulkCopy(connection);
+                return await ssBuilder.ExecuteBulkCopy(connection, log: log);
             }
             else
             {
                 var sql = ssBuilder.Build();
-                return await Utils.SqlExecuteNonQuery(
-                    sql,
-                    connection,
-                    parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
+                {
+                    sqllog?.AddEvent("SQL", sql);
+                    var result = await Utils.SqlExecuteNonQuery(
+                        sql,
+                        connection,
+                        parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                    sqllog?.AddMetric("SQLCount", result);
+                    return result;
+                }
             }
         }
 
@@ -361,99 +374,105 @@ namespace GaleForce.SQL.SQLServer
             string connection,
             int bulkSize = 50000,
             int retries = 3,
-            int timeoutInSeconds = 600)
+            int timeoutInSeconds = 600,
+            StageLogger log = null)
         {
             var sql = ssBuilder.Build();
-            var fields = ssBuilder.Inserts;
-
-            if (fields.Count == 0)
+            using (var sqllog = log?.Item("sql.bulkcopy." + sql.GetHashCode(), "SQL"))
             {
-                fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
-            }
+                sqllog?.AddEvent("SQL", sql);
+                var fields = ssBuilder.Inserts;
 
-            var type = typeof(TRecord);
-            var props = type.GetProperties();
-
-            var dt = new DataTable();
-            var fieldProps = new List<PropertyInfo>();
-
-            var hasValues = ssBuilder.Valueset.Count() > 0;
-            var values = hasValues ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList() : null;
-
-            foreach (var originalField in fields)
-            {
-                var field = originalField.Contains(".")
-                    ? originalField.Substring(originalField.IndexOf(".") + 1)
-                    : originalField;
-                var property = props.FirstOrDefault(p => p.Name == field);
-                if (property != null)
+                if (fields.Count == 0)
                 {
-                    Type propertyType = property.PropertyType;
-                    if (propertyType.IsGenericType &&
-                        propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                    {
-                        propertyType = Nullable.GetUnderlyingType(propertyType);
-                    }
-
-                    dt.Columns.Add(new DataColumn(property.Name, propertyType));
-                    fieldProps.Add(property);
+                    fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
                 }
-            }
 
-            var source = ssBuilder.SourceData;
-            var groupedData = source.ToArray().Split(bulkSize);
+                var type = typeof(TRecord);
+                var props = type.GetProperties();
 
-            var count = 0;
-            using (var destConn = new SqlConnection(connection))
-            {
-                await destConn.OpenAsync();
-                var bulkCopy = new SqlBulkCopy(destConn)
+                var dt = new DataTable();
+                var fieldProps = new List<PropertyInfo>();
+
+                var hasValues = ssBuilder.Valueset.Count() > 0;
+                var values = hasValues ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList() : null;
+
+                foreach (var originalField in fields)
+                {
+                    var field = originalField.Contains(".")
+                        ? originalField.Substring(originalField.IndexOf(".") + 1)
+                        : originalField;
+                    var property = props.FirstOrDefault(p => p.Name == field);
+                    if (property != null)
+                    {
+                        Type propertyType = property.PropertyType;
+                        if (propertyType.IsGenericType &&
+                            propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        {
+                            propertyType = Nullable.GetUnderlyingType(propertyType);
+                        }
+
+                        dt.Columns.Add(new DataColumn(property.Name, propertyType));
+                        fieldProps.Add(property);
+                    }
+                }
+
+                var source = ssBuilder.SourceData;
+                var groupedData = source.ToArray().Split(bulkSize);
+
+                var count = 0;
+                using (var destConn = new SqlConnection(connection))
+                {
+                    await destConn.OpenAsync();
+                    var bulkCopy = new SqlBulkCopy(destConn)
                 {
                     DestinationTableName = ssBuilder.TableName,
                     BulkCopyTimeout = timeoutInSeconds                   
                 };
 
-                foreach (var group in groupedData)
-                {
-                    dt.Rows.Clear();
-                    foreach (var record in group)
+                    foreach (var group in groupedData)
                     {
-                        var columns = new List<object>();
-                        var fieldIndex = 0;
-                        foreach (var fp in fieldProps)
+                        dt.Rows.Clear();
+                        foreach (var record in group)
                         {
-                            var value = (hasValues ? values[fieldIndex].Invoke(record) : fp.GetValue(record, null)) ??
-                                DBNull.Value;
-                            columns.Add(value);
-                        }
-
-                        dt.Rows.Add(columns.ToArray());
-                    }
-
-                    var retryIndex = 0;
-                    while (retryIndex < retries)
-                    {
-                        try
-                        {
-                            await bulkCopy.WriteToServerAsync(dt);
-                            break;
-                        }
-                        catch
-                        {
-                            if (++retryIndex >= retries)
+                            var columns = new List<object>();
+                            var fieldIndex = 0;
+                            foreach (var fp in fieldProps)
                             {
-                                throw;
+                                var value = (hasValues ? values[fieldIndex].Invoke(record) : fp.GetValue(record, null)) ??
+                                    DBNull.Value;
+                                columns.Add(value);
+                            }
+
+                            dt.Rows.Add(columns.ToArray());
+                        }
+
+                        var retryIndex = 0;
+                        while (retryIndex < retries)
+                        {
+                            try
+                            {
+                                await bulkCopy.WriteToServerAsync(dt);
+                                break;
+                            }
+                            catch
+                            {
+                                if (++retryIndex >= retries)
+                                {
+                                    throw;
+                                }
                             }
                         }
+
+                        count += dt.Rows.Count;
                     }
 
-                    count += dt.Rows.Count;
+                    await destConn.CloseAsync();
                 }
 
-                await destConn.CloseAsync();
+                sqllog?.AddMetric("SQLCount", count);
+                return count;
             }
-
-            return count;
         }
     }
 }

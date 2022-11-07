@@ -7,6 +7,7 @@ namespace GaleForce.SQL.SQLServer
 {
     using System;
     using System.Collections.Generic;
+    using GaleForceCore.Logger;
 
     /// <summary>
     /// Class SimpleSqlBuilderContext.
@@ -26,7 +27,7 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="tables">The tables.</param>
         public SimpleSqlBuilderContext(Dictionary<string, object> tables)
         {
-            this.IsLocal = true;
+            this.IsTesting = true;
             this.Tables = tables;
         }
 
@@ -36,7 +37,7 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="connection">The connection.</param>
         public SimpleSqlBuilderContext(string connection)
         {
-            this.IsLocal = false;
+            this.IsTesting = false;
             this.Connection = connection;
         }
 
@@ -45,11 +46,19 @@ namespace GaleForce.SQL.SQLServer
         /// </summary>
         public string Connection { get; set; }
 
+        public StageLogger StageLogger { get; set; } = null;
+
         /// <summary>
         /// Gets or sets a value indicating whether this instance is local (testing) or otherwise a
         /// SQL connection.
         /// </summary>
-        public bool IsLocal { get; set; }
+        public bool IsTesting
+        {
+            get { return this.Mode == SimpleSqlBuilderContextMode.Testing; }
+            set { this.Mode = value ? SimpleSqlBuilderContextMode.Testing : SimpleSqlBuilderContextMode.SQL; }
+        }
+
+        public SimpleSqlBuilderContextMode Mode { get; set; } = SimpleSqlBuilderContextMode.SQL;
 
         /// <summary>
         /// Gets or sets a dictionary of tables, by tablename.
@@ -138,7 +147,7 @@ namespace GaleForce.SQL.SQLServer
                 throw new ArgumentNullException("TableName is null");
             }
 
-            this.IsLocal = true;
+            this.IsTesting = true;
             this.SetContextTable<T>(tableName, new SimpleSqlBuilderContextTable<T>(tableName, records));
         }
 
