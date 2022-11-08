@@ -467,7 +467,10 @@ namespace GaleForce.SQL.SQLServer
                         }
 
                         var col = new DataColumn(property.Name, propertyType);
-                        col.AllowDBNull = isNullable;
+                        if (isNullable)
+                        {
+                            col.AllowDBNull = isNullable;
+                        }
 
                         dt.Columns.Add(col);
                         fieldProps.Add(property);
