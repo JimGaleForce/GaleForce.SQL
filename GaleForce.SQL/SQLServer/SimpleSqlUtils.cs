@@ -445,6 +445,7 @@ namespace GaleForce.SQL.SQLServer
                 var hasValues = ssBuilder.Valueset.Count() > 0;
                 var values = hasValues ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList() : null;
 
+                log?.Log("Fields:", StageLevel.Trace);
                 foreach (var originalField in fields)
                 {
                     var field = originalField.Contains(".")
@@ -462,12 +463,18 @@ namespace GaleForce.SQL.SQLServer
 
                         dt.Columns.Add(new DataColumn(property.Name, propertyType));
                         fieldProps.Add(property);
+                        log?.Log($"  orig={originalField}, field={field}, type={propertyType.Name}", StageLevel.Trace);
+                    }
+                    else
+                    {
+                        log?.Log($"  orig={originalField}, field={field}, property is null", StageLevel.Trace);
                     }
                 }
 
                 var source = ssBuilder.SourceData;
                 var groupedData = source.ToArray().Split(bulkSize);
 
+                var logged = false;
                 var count = 0;
                 using (var destConn = new SqlConnection(connection))
                 {
@@ -494,6 +501,15 @@ namespace GaleForce.SQL.SQLServer
                             }
 
                             dt.Rows.Add(columns.ToArray());
+                        }
+
+                        if (!logged)
+                        {
+                            logged = true;
+                            log?.Log("One Record Example:", StageLevel.Trace);
+                            log?.Log(
+                            "  " + string.Join(",", dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
+                            StageLevel.Trace);
                         }
 
                         var retryIndex = 0;

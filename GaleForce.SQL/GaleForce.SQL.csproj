@@ -7,8 +7,8 @@
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.10.12</Version>
-    <PackageReleaseNotes>fixes bulkcopy field index</PackageReleaseNotes>
+    <Version>1.0.10.13</Version>
+    <PackageReleaseNotes>adds logging to bulkcopy</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
