@@ -392,12 +392,17 @@ namespace GaleForce.SQL.SQLServer
                 using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
                 {
                     sqllog?.AddEvent("SQL", sql);
-                    var result = await Utils.SqlExecuteNonQuery(
-                        sql,
-                        connection,
-                        parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
-                    sqllog?.AddMetric("SQLCount", result);
-                    return result;
+                    if (!string.IsNullOrEmpty(sql))
+                    {
+                        var result = await Utils.SqlExecuteNonQuery(
+                            sql,
+                            connection,
+                            parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                        sqllog?.AddMetric("SQLCount", result);
+                        return result;
+                    }
+
+                    return 0;
                 }
             }
         }
