@@ -361,6 +361,22 @@ namespace TestGaleForce.SQL
 
             Assert.AreEqual(0, updatedLocalRecords); //empty data set, nothing to update.
         }
+
+        // [TestMethod]
+        // public void TestSelectToSubClass()
+        // {
+        // var connection = this.LocalConnection();
+        // var context = new SimpleSqlBuilderContext(connection);
+
+        // var list = new SimpleSqlBuilder<LocalTableRecordSubclass>(LocalTableRecord.TableName)
+        // .Select()
+        // .Where(a => a.Id < 10)
+        // .OrderByDescending(a => a.Int1)
+        // .Execute(context)
+        // .ToList();
+
+        // Assert.IsTrue(list[0].Int1 != null);
+        // }
     }
 
     public class TestRecord<T>
@@ -373,6 +389,12 @@ namespace TestGaleForce.SQL
         public string StringX { get; set; }
 
         public int IntX { get; set; }
+    }
+
+    public class LocalTableRecordSubclass : LocalTableRecord
+    {
+        [IgnoreField]
+        public string SomethingElse { get; set; }
     }
 
     public class LocalTableRecord

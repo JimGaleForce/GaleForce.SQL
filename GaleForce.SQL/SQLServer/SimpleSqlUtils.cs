@@ -341,8 +341,13 @@ namespace GaleForce.SQL.SQLServer
                 var results = new List<TRecord>();
 
                 var type = typeof(TRecord);
-                var props = type.GetProperties();
+                var props = ssBuilder.GetNonIgnoreProperties<TRecord>();
                 var fields = ssBuilder.Fields;
+
+                if (fields.Count == 0)
+                {
+                    fields = ssBuilder.FieldList(ssBuilder.Fields);
+                }
 
                 foreach (var record in records)
                 {
@@ -436,11 +441,12 @@ namespace GaleForce.SQL.SQLServer
 
                 if (fields.Count == 0)
                 {
-                    fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
+                    // fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
+                    fields = ssBuilder.FieldList(ssBuilder.Fields);
                 }
 
                 var type = typeof(TRecord);
-                var props = type.GetProperties();
+                var props = ssBuilder.GetNonIgnoreProperties<TRecord>();
 
                 var dt = new DataTable();
                 var fieldProps = new List<PropertyInfo>();
