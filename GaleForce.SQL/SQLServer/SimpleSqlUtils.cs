@@ -514,10 +514,16 @@ namespace GaleForce.SQL.SQLServer
                         if (!logged)
                         {
                             logged = true;
-                            log?.Log("One Record Example:", StageLevel.Trace);
-                            log?.Log(
-                            "  " + string.Join(",", dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
-                            StageLevel.Trace);
+                            if (group.Count() > 0)
+                            {
+                                log?.Log("One Record Example:", StageLevel.Trace);
+                                log?.Log(
+                                "  " +
+                                    string.Join(
+                                        ",",
+                                        dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
+                                StageLevel.Trace);
+                            }
                         }
 
                         var retryIndex = 0;
@@ -532,6 +538,17 @@ namespace GaleForce.SQL.SQLServer
                             {
                                 if (++retryIndex >= retries)
                                 {
+                                    if (group.Count() > 0)
+                                    {
+                                        log?.Log("Error Record Example, First in Group:", StageLevel.Trace);
+                                        log?.Log(
+                                        "  " +
+                                            string.Join(
+                                                ",",
+                                                dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
+                                        StageLevel.Trace);
+                                    }
+
                                     throw;
                                 }
                             }
