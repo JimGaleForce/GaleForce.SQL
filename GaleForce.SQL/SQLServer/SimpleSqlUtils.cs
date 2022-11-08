@@ -384,7 +384,10 @@ namespace GaleForce.SQL.SQLServer
                 &&
                 (bool) ssBuilder.Metadata["UseBulkCopy"])
             {
-                return await ssBuilder.ExecuteBulkCopy(connection, log: log);
+                int bulkSize = ssBuilder.Metadata.ContainsKey("BulkCopySize")
+                    ? (int) ssBuilder.Metadata["BulkCopySize"]
+                    : 50000;
+                return await ssBuilder.ExecuteBulkCopy(connection, log: log, bulkSize: bulkSize);
             }
             else
             {
@@ -454,14 +457,19 @@ namespace GaleForce.SQL.SQLServer
                     var property = props.FirstOrDefault(p => p.Name == field);
                     if (property != null)
                     {
+                        var isNullable = false;
                         Type propertyType = property.PropertyType;
                         if (propertyType.IsGenericType &&
                             propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
                         {
                             propertyType = Nullable.GetUnderlyingType(propertyType);
+                            isNullable = true;
                         }
 
-                        dt.Columns.Add(new DataColumn(property.Name, propertyType));
+                        var col = new DataColumn(property.Name, propertyType);
+                        col.AllowDBNull = isNullable;
+
+                        dt.Columns.Add(col);
                         fieldProps.Add(property);
                         log?.Log($"  orig={originalField}, field={field}, type={propertyType.Name}", StageLevel.Trace);
                     }
