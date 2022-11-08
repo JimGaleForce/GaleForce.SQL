@@ -493,6 +493,13 @@ namespace GaleForce.SQL.SQLServer
                     BulkCopyTimeout = timeoutInSeconds                   
                 };
 
+                    dt.Columns
+                        .Cast<DataColumn>()
+                        .ToList()
+                        .ForEach(
+                            col =>
+                    bulkCopy.ColumnMappings.Add(new SqlBulkCopyColumnMapping(col.ColumnName, col.ColumnName)));
+
                     foreach (var group in groupedData)
                     {
                         dt.Rows.Clear();
