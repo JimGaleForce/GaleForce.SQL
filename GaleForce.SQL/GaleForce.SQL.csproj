@@ -7,8 +7,8 @@
     <PackageProjectUrl>https://github.com/JimGaleForce/GaleForce.SQL</PackageProjectUrl>
     <Description>Provides common SQL (Server) utilities.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.10.11</Version>
-    <PackageReleaseNotes>no-ops when insert/update records are zero</PackageReleaseNotes>
+    <Version>1.0.10.12</Version>
+    <PackageReleaseNotes>fixes bulkcopy field index</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

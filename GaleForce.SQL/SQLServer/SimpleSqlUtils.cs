@@ -490,6 +490,7 @@ namespace GaleForce.SQL.SQLServer
                                 var value = (hasValues ? values[fieldIndex].Invoke(record) : fp.GetValue(record, null)) ??
                                     DBNull.Value;
                                 columns.Add(value);
+                                ++fieldIndex;
                             }
 
                             dt.Rows.Add(columns.ToArray());
