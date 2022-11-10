@@ -269,10 +269,19 @@ namespace GaleForce.SQL.SQLServer
                 var data = context.GetList<TRecord>(ssBuilder.TableName);
                 if (data != null)
                 {
+                    Dictionary<string, SourceData> sourceData = context.GetSourceData<TRecord>();
                     IEnumerable<TRecord> source = null;
                     if (ssBuilder.Command == "MERGE")
                     {
                         source = data;
+                        sourceData.Add(
+                            "__source",
+                            new SourceData
+                            {
+                                Data = source as IEnumerable<object>,
+                                Name = "__source",
+                                SourceType = typeof(TRecord)
+                            });
                         data = context.GetList<TRecord>(ssBuilder.MergeIntoTableName);
 
                         if (data == null)
@@ -286,7 +295,7 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
-                        var result = ssBuilder.ExecuteNonQuery(data, source);
+                        var result = ssBuilder.ExecuteNonQuery(data, sourceData);
                         sqllog?.AddMetric("SQLCount", result);
                         return result;
                     }

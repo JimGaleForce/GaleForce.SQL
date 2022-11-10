@@ -7,6 +7,7 @@ namespace GaleForce.SQL.SQLServer
 {
     using System;
     using System.Collections.Generic;
+    using GaleForceCore.Builders;
     using GaleForceCore.Logger;
 
     /// <summary>
@@ -166,6 +167,25 @@ namespace GaleForce.SQL.SQLServer
             }
 
             return this.Tables.ContainsKey(tableName);
+        }
+
+        public Dictionary<string, SourceData> GetSourceData<T>()
+        {
+            var result = new Dictionary<string, SourceData>();
+            foreach (var key in this.Tables.Keys)
+            {
+                var src = (this.Tables[key] as SimpleSqlBuilderContextTable<object>);
+                var source = new SourceData
+                {
+                    Data = GetTable<T>(key) as IEnumerable<object>,
+                    Name = key,
+                    SourceType = typeof(T)
+                };
+
+                result.Add(key, source);
+            }
+
+            return result;
         }
     }
 }

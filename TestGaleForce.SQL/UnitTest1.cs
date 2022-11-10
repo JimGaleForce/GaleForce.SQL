@@ -362,6 +362,28 @@ namespace TestGaleForce.SQL
             Assert.AreEqual(0, updatedLocalRecords); //empty data set, nothing to update.
         }
 
+        [TestMethod]
+        public void InsertFromSelectAllExecute()
+        {
+            var context = new SimpleSqlBuilderContext();
+            context.IsTesting = true;
+            var target = new List<LocalTableRecord>();
+            context.SetTable(LocalTableRecord.TableName, target);
+            context.SetTable("Temp" + LocalTableRecord.TableName, LocalTableRecord.GetData());
+
+            // var target = new List<LocalTableRecord>();
+            // var sources = new Dictionary<string, SourceData>();
+            // sources["Temp" + LocalTableRecord.TableName] = SourceData.Create(
+            // "Temp" + LocalTableRecord.TableName,
+            // source);
+
+            var mergeInsert = new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Insert(s => s.From("Temp" + LocalTableRecord.TableName).Select())
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(3, target.Count());
+        }
+
         // [TestMethod]
         // public void TestSelectToSubClass()
         // {
