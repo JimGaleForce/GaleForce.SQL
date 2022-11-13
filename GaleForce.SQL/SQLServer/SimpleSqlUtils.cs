@@ -57,7 +57,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection, log: log);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -112,7 +112,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection, log: log);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -175,7 +175,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection, log: log);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -246,7 +246,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return ssBuilder.ExecuteSQL(context.Connection, log: log);
+                return ssBuilder.ExecuteSQL(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -308,7 +308,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return await ssBuilder.ExecuteSQLNonQuery(context.Connection, log: log);
+                return await ssBuilder.ExecuteSQLNonQuery(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -337,14 +337,15 @@ namespace GaleForce.SQL.SQLServer
         public static IEnumerable<TRecord> ExecuteSQL<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             string connection,
-            StageLogger log = null)
+            StageLogger log = null,
+            int timeoutSecondsDefault = 600)
         {
             var sql = ssBuilder.Build();
             using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
             {
                 sqllog?.AddEvent("SQL", sql);
 
-                int timeout = 600;
+                int timeout = timeoutSecondsDefault;
                 if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
                 {
                     int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
@@ -398,7 +399,8 @@ namespace GaleForce.SQL.SQLServer
         public static async Task<int> ExecuteSQLNonQuery<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             string connection,
-            StageLogger log = null)
+            StageLogger log = null,
+            int timeoutSecondsDefault = 600)
         {
             if (ssBuilder.Command == "INSERT"
                 &&
@@ -410,7 +412,7 @@ namespace GaleForce.SQL.SQLServer
                     ? (int) ssBuilder.Metadata["BulkCopySize"]
                     : 50000;
 
-                int timeout = 600;
+                int timeout = timeoutSecondsDefault;
                 if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
                 {
                     int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
