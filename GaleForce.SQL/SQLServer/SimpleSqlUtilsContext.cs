@@ -71,6 +71,8 @@ namespace GaleForce.SQL.SQLServer
         /// </summary>
         public int TimeoutInSeconds { get; set; } = 3600;
 
+        public bool TestAutoCreateTables { get; set; } = false;
+
         /// <summary>
         /// Gets the table.
         /// </summary>

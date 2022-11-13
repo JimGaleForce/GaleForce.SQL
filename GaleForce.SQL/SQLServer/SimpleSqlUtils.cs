@@ -38,6 +38,13 @@ namespace GaleForce.SQL.SQLServer
             {
                 var tableName = ssBuilder.TableName;
                 var data = context.GetTable<TRecord>(tableName);
+
+                if (data == null && context.TestAutoCreateTables)
+                {
+                    data = new List<TRecord>();
+                    context.SetTable(tableName, data);
+                }
+
                 if (data != null)
                 {
                     var sql = ssBuilder.Build();
@@ -87,14 +94,30 @@ namespace GaleForce.SQL.SQLServer
 
                     if (data1 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data1 = new List<TRecord1>();
+                            context.SetTable(ssBuilder.TableNames[0], data1);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data2 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data2 = new List<TRecord2>();
+                            context.SetTable(ssBuilder.TableNames[1], data2);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     var sql = ssBuilder.Build();
@@ -144,20 +167,44 @@ namespace GaleForce.SQL.SQLServer
 
                     if (data1 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data1 = new List<TRecord1>();
+                            context.SetTable(ssBuilder.TableNames[0], data1);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data2 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data2 = new List<TRecord2>();
+                            context.SetTable(ssBuilder.TableNames[1], data2);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data3 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data3 = new List<TRecord3>();
+                            context.SetTable(ssBuilder.TableNames[2], data3);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     var sql = ssBuilder.Build();
@@ -209,26 +256,58 @@ namespace GaleForce.SQL.SQLServer
 
                     if (data1 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data1 = new List<TRecord1>();
+                            context.SetTable(ssBuilder.TableNames[0], data1);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[0]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data2 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data2 = new List<TRecord2>();
+                            context.SetTable(ssBuilder.TableNames[1], data2);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[1]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data3 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data3 = new List<TRecord3>();
+                            context.SetTable(ssBuilder.TableNames[2], data3);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[2]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     if (data4 == null)
                     {
-                        throw new MissingDataTableException(
-                            $"{ssBuilder.TableNames[3]} needs to exist for testing in SimpleSqlBuilder");
+                        if (context.TestAutoCreateTables)
+                        {
+                            data4 = new List<TRecord4>();
+                            context.SetTable(ssBuilder.TableNames[3], data4);
+                        }
+                        else
+                        {
+                            throw new MissingDataTableException(
+                                $"{ssBuilder.TableNames[3]} needs to exist for testing in SimpleSqlBuilder");
+                        }
                     }
 
                     var sql = ssBuilder.Build();
@@ -267,6 +346,13 @@ namespace GaleForce.SQL.SQLServer
             if (context.IsTesting)
             {
                 var data = context.GetList<TRecord>(ssBuilder.TableName);
+
+                if (data == null && context.TestAutoCreateTables)
+                {
+                    data = new List<TRecord>();
+                    context.SetTable(ssBuilder.TableName, data);
+                }
+
                 if (data != null)
                 {
                     Dictionary<string, SourceData> sourceData = context.GetSourceData<TRecord>();
@@ -286,8 +372,16 @@ namespace GaleForce.SQL.SQLServer
 
                         if (data == null)
                         {
-                            throw new MissingDataTableException(
-                                $"{ssBuilder.MergeIntoTableName} needs to exist as a List<{typeof(TRecord).Name}> to merge into for testing in SimpleSqlBuilder");
+                            if (context.TestAutoCreateTables)
+                            {
+                                data = new List<TRecord>();
+                                context.SetTable(ssBuilder.TableName, data);
+                            }
+                            else
+                            {
+                                throw new MissingDataTableException(
+                                    $"{ssBuilder.MergeIntoTableName} needs to exist as a List<{typeof(TRecord).Name}> to merge into for testing in SimpleSqlBuilder");
+                            }
                         }
                     }
 
@@ -438,14 +532,22 @@ namespace GaleForce.SQL.SQLServer
                             int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
                         }
 
-                        var result = await Utils.SqlExecuteNonQuery(
-                            sql,
-                            connection,
-                            parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null,
-                            timeoutSeconds: timeout);
+                        try
+                        {
+                            var result = await Utils.SqlExecuteNonQuery(
+                                sql,
+                                connection,
+                                parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null,
+                                timeoutSeconds: timeout);
 
-                        sqllog?.AddMetric("SQLCount", result);
-                        return result;
+                            sqllog?.AddMetric("SQLCount", result);
+                            return result;
+                        }
+                        catch (Exception e)
+                        {
+                            log?.Log(e);
+                            throw;
+                        }
                     }
 
                     return 0;
@@ -565,21 +667,6 @@ namespace GaleForce.SQL.SQLServer
                             dt.Rows.Add(columns.ToArray());
                         }
 
-                        if (!logged)
-                        {
-                            logged = true;
-                            if (group.Count() > 0)
-                            {
-                                log?.Log("One Record Example:", StageLevel.Trace);
-                                log?.Log(
-                                "  " +
-                                    string.Join(
-                                        ",",
-                                        dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
-                                StageLevel.Trace);
-                            }
-                        }
-
                         var retryIndex = 0;
                         while (retryIndex < retries)
                         {
@@ -588,21 +675,11 @@ namespace GaleForce.SQL.SQLServer
                                 await bulkCopy.WriteToServerAsync(dt);
                                 break;
                             }
-                            catch
+                            catch (Exception e)
                             {
+                                log?.Log(e);
                                 if (++retryIndex >= retries)
                                 {
-                                    if (group.Count() > 0)
-                                    {
-                                        log?.Log("Error Record Example, First in Group:", StageLevel.Trace);
-                                        log?.Log(
-                                        "  " +
-                                            string.Join(
-                                                ",",
-                                                dt.Rows[0].ItemArray.Select(i => Utils.GetSQLValue(i.GetType(), i))),
-                                        StageLevel.Trace);
-                                    }
-
                                     throw;
                                 }
                             }
