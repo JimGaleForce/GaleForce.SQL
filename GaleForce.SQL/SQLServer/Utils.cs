@@ -178,7 +178,7 @@ namespace GaleForce.SQL.SQLServer
         public static EnumerableRowCollection<DataRow> SqlCommandToLinq(
             string command,
             string connection,
-            int timeoutSeconds = 500,
+            int timeoutSeconds = 600,
             bool retryIfTransportError = true,
             Dictionary<string, object> parameters = null)
         {
@@ -199,7 +199,7 @@ namespace GaleForce.SQL.SQLServer
         public static async Task<int> SqlExecuteNonQuery(
             string command,
             string connection,
-            int timeoutSeconds = 500,
+            int timeoutSeconds = 600,
             Dictionary<string, object> parameters = null)
         {
             var count = 0;
@@ -234,7 +234,7 @@ namespace GaleForce.SQL.SQLServer
         public static EnumerableRowCollection<DataRow> SqlCommandToLinq(
             string command,
             SqlConnection connection,
-            int timeoutSeconds = 500,
+            int timeoutSeconds = 600,
             bool retryIfTransportError = true,
             Dictionary<string, object> parameters = null)
         {

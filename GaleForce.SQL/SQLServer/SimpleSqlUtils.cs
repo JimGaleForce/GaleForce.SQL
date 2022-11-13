@@ -343,10 +343,18 @@ namespace GaleForce.SQL.SQLServer
             using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
             {
                 sqllog?.AddEvent("SQL", sql);
+
+                int timeout = 600;
+                if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                {
+                    int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                }
+
                 var records = Utils.SqlCommandToLinq(
                     sql,
                     connection,
-                    parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                    parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null,
+                    timeoutSeconds: timeout);
                 var results = new List<TRecord>();
 
                 var type = typeof(TRecord);
@@ -401,7 +409,18 @@ namespace GaleForce.SQL.SQLServer
                 int bulkSize = ssBuilder.Metadata.ContainsKey("BulkCopySize")
                     ? (int) ssBuilder.Metadata["BulkCopySize"]
                     : 50000;
-                return await ssBuilder.ExecuteBulkCopy(connection, log: log, bulkSize: bulkSize);
+
+                int timeout = 600;
+                if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                {
+                    int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                }
+
+                return await ssBuilder.ExecuteBulkCopy(
+                    connection,
+                    log: log,
+                    bulkSize: bulkSize,
+                    timeoutInSeconds: timeout);
             }
             else
             {
@@ -411,10 +430,18 @@ namespace GaleForce.SQL.SQLServer
                     sqllog?.AddEvent("SQL", sql);
                     if (!string.IsNullOrEmpty(sql))
                     {
+                        int timeout = 600;
+                        if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                        {
+                            int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                        }
+
                         var result = await Utils.SqlExecuteNonQuery(
                             sql,
                             connection,
-                            parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null);
+                            parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null,
+                            timeoutSeconds: timeout);
+
                         sqllog?.AddMetric("SQLCount", result);
                         return result;
                     }
