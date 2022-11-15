@@ -56,7 +56,7 @@ namespace TestGaleForce.SQL
         private string LocalConnection()
         {
             SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "MACHINE\\DATASOURCE";
+            builder.DataSource = "MS-BOSS-JIMGALE\\ML";
             builder.InitialCatalog = "LOCALTEST";
             builder.IntegratedSecurity = true;
 
@@ -384,19 +384,19 @@ namespace TestGaleForce.SQL
             Assert.AreEqual(3, target.Count());
         }
 
-        // [TestMethod]
-        // public void TestSelectToSubClass()
-        // {
-        // var connection = this.LocalConnection();
-        // var context = new SimpleSqlBuilderContext(connection);
+        [TestMethod]
+        public void TestSelectToSubClass()
+        {
+            var connection = this.LocalConnection();
+            var context = new SimpleSqlBuilderContext(connection);
 
-        // var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(LocalTableWithEnumsRecord.TableName)
-        // .Select()
-        // .Execute(context)
-        // .ToList();
+            var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(LocalTableWithEnumsRecord.TableName)
+            .Select()
+                .Execute(context)
+                .ToList();
 
-        // Assert.IsTrue(list[0].Int1 != null);
-        // }
+            Assert.IsTrue(list[0].Int1 != null);
+        }
     }
 
     public class TestRecord<T>
@@ -432,6 +432,31 @@ namespace TestGaleForce.SQL
         public AnEnum Str2 { get; set; }
 
         public int? Int2 { get; set; }
+
+        public TokenRecordType Int3 { get; set; }
+    }
+
+    public enum TokenRecordType
+    {
+        /// <summary>
+        /// Used for uninitialized variables or unknown types.
+        /// </summary>
+        Undefined,
+
+        /// <summary>
+        /// OCV Issue.
+        /// </summary>
+        Issue = 1,
+
+        /// <summary>
+        /// User feedback item.
+        /// </summary>
+        Feedback = 2,
+
+        /// <summary>
+        /// Area Path information.
+        /// </summary>
+        Area = 3
     }
 
     public enum AnEnum
