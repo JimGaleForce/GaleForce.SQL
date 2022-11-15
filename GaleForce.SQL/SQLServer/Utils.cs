@@ -164,6 +164,57 @@ namespace GaleForce.SQL.SQLServer
                 case "Single?":
                     prop.SetValue(newRecord, record.Field<float?>(prop.Name));
                     break;
+                default:
+                    if (prop.PropertyType.IsEnum)
+                    {
+                        var underType = SqlHelpers.GetBetterPropTypeName(prop.PropertyType.GetEnumUnderlyingType());
+                        switch (underType)
+                        {
+                            case "int":
+                                var value = record.Field<object>(prop.Name);
+                                if (value != null)
+                                {
+                                    if (value is int || value is int?)
+                                    {
+                                        var enumValue = Enum.ToObject(prop.PropertyType, value);
+                                        if (enumValue != null)
+                                        {
+                                            prop.SetValue(
+                                                newRecord,
+                                                enumValue);
+                                        }
+                                    }
+                                    else if (value is string)
+                                    {
+                                        object enumValue;
+                                        try
+                                        {
+                                            enumValue = Enum.Parse(prop.PropertyType, value.ToString());
+                                        }
+                                        catch (ArgumentException)
+                                        {
+                                            enumValue = Enum.ToObject(prop.PropertyType, 0);
+                                        }
+
+                                        if (enumValue != null)
+                                        {
+                                            prop.SetValue(
+                                                newRecord,
+                                                enumValue);
+                                        }
+                                    }
+                                }
+
+                                break;
+                            case "string":
+                                var value2 = Enum.ToObject(prop.PropertyType, record.Field<string>(prop.Name) ?? "");
+                                prop.SetValue(
+                                    newRecord,
+                                    value2);
+                                break;
+                        }
+                    }
+                    break;
             }
         }
 

@@ -390,10 +390,8 @@ namespace TestGaleForce.SQL
         // var connection = this.LocalConnection();
         // var context = new SimpleSqlBuilderContext(connection);
 
-        // var list = new SimpleSqlBuilder<LocalTableRecordSubclass>(LocalTableRecord.TableName)
+        // var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(LocalTableWithEnumsRecord.TableName)
         // .Select()
-        // .Where(a => a.Id < 10)
-        // .OrderByDescending(a => a.Int1)
         // .Execute(context)
         // .ToList();
 
@@ -417,6 +415,32 @@ namespace TestGaleForce.SQL
     {
         [IgnoreField]
         public string SomethingElse { get; set; }
+    }
+
+    public class LocalTableWithEnumsRecord
+    {
+        public const string TableName = "LocalTable";
+
+        public int Id { get; set; }
+
+        public string Str1 { get; set; }
+
+        public AnEnum Int1 { get; set; }
+
+        public bool? Bool1 { get; set; }
+
+        public AnEnum Str2 { get; set; }
+
+        public int? Int2 { get; set; }
+    }
+
+    public enum AnEnum
+    {
+        None,
+        One = 1,
+        Two = 2,
+        Three = 3,
+        Four = 4
     }
 
     public class LocalTableRecord
