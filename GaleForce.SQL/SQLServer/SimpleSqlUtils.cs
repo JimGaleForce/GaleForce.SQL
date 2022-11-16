@@ -440,9 +440,9 @@ namespace GaleForce.SQL.SQLServer
                 sqllog?.AddEvent("SQL", sql);
 
                 int timeout = timeoutSecondsDefault;
-                if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                if (ssBuilder.Metadata.ContainsKey("TimeoutInSeconds"))
                 {
-                    int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                    int.TryParse(ssBuilder.Metadata["TimeoutInSeconds"].ToString(), out timeout);
                 }
 
                 var records = Utils.SqlCommandToLinq(
@@ -507,9 +507,9 @@ namespace GaleForce.SQL.SQLServer
                     : 50000;
 
                 int timeout = timeoutSecondsDefault;
-                if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                if (ssBuilder.Metadata.ContainsKey("TimeoutInSeconds"))
                 {
-                    int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                    int.TryParse(ssBuilder.Metadata["TimeoutInSeconds"].ToString(), out timeout);
                 }
 
                 return await ssBuilder.ExecuteBulkCopy(
@@ -526,10 +526,10 @@ namespace GaleForce.SQL.SQLServer
                     sqllog?.AddEvent("SQL", sql);
                     if (!string.IsNullOrEmpty(sql))
                     {
-                        int timeout = 600;
-                        if (ssBuilder.Metadata.ContainsKey("TimeoutSeconds"))
+                        int timeout = timeoutSecondsDefault;
+                        if (ssBuilder.Metadata.ContainsKey("TimeoutInSeconds"))
                         {
-                            int.TryParse(ssBuilder.Metadata["TimeoutSeconds"].ToString(), out timeout);
+                            int.TryParse(ssBuilder.Metadata["TimeoutInSeconds"].ToString(), out timeout);
                         }
 
                         try
