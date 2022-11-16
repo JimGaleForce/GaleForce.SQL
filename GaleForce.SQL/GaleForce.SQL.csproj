@@ -10,6 +10,7 @@
     <Version>1.0.10.25</Version>
     <PackageReleaseNotes>updated gfcore</PackageReleaseNotes>
     <IncludeSymbols>True</IncludeSymbols>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
