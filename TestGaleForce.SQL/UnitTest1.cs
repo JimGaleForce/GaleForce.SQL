@@ -56,7 +56,7 @@ namespace TestGaleForce.SQL
         private string LocalConnection()
         {
             SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "MS-BOSS-JIMGALE\\ML";
+            builder.DataSource = "MACHINENAME\\DATASOURCE";
             builder.InitialCatalog = "LOCALTEST";
             builder.IntegratedSecurity = true;
 
@@ -121,6 +121,57 @@ namespace TestGaleForce.SQL
         // .UseBulkCopy()
         // .ExecuteNonQuery(context);
         // }
+
+        // [TestMethod]
+        // public async Task TestLocalSqlBulkCopyFromGenericTempTableInsert()
+        // {
+        // var connection = this.LocalConnection();
+
+        // var context = new SimpleSqlBuilderContext(connection);
+
+        // var data = LocalTableRecordExact.GetData();
+        // var sql = await new SimpleSqlBuilder<LocalTableRecordExact>(LocalTableRecord.TableName)
+        // .Insert(data, l => l.Id, l => l.Str1, l => l.Int1, l => l.Int3)
+        // .UseTempTable()
+        // .ExecuteNonQuery(context);
+        // }
+
+        // [TestMethod]
+        // public async Task TestLocalSqlBulkCopyFromGenericTempTableUpdate()
+        // {
+        // var connection = this.LocalConnection();
+
+        // var context = new SimpleSqlBuilderContext(connection);
+
+        // var data = LocalTableRecordExact.GetData();
+        // var sql = await new SimpleSqlBuilder<LocalTableRecordExact>(LocalTableRecord.TableName)
+        // .Update(data, l => l.Id, l => l.Str1, l => l.Int1, l => l.Int3)
+        // .Match((s, t) => s.Id == t.Id)
+        // .UseMinTempTable()
+        // .ExecuteNonQuery(context);
+        // }
+
+        [TestMethod]
+        public async Task TestInsertFromGenericBulkCopyTempTable()
+        {
+            var target = new List<LocalTableRecord>();
+            var context = new SimpleSqlBuilderContext();
+            context.SetTable(LocalTableRecord.TableName, target);
+
+            var data = LocalTableRecord.GetData();
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+                .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+                .UseTempTable()
+                .ExecuteNonQuery(context);
+
+            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(data[0].Id, target[0].Id);
+            Assert.AreEqual(data[1].Id, target[1].Id);
+            Assert.AreEqual(data[2].Id, target[2].Id);
+            Assert.AreNotEqual(data[0].Str2, target[0].Str2);
+            Assert.AreNotEqual(data[1].Str2, target[1].Str2);
+            Assert.AreNotEqual(data[2].Str2, target[2].Str2);
+        }
 
         [TestMethod]
         public async Task TestInsertFromGenericBulkCopy()
@@ -466,6 +517,56 @@ namespace TestGaleForce.SQL
         Two = 2,
         Three = 3,
         Four = 4
+    }
+
+    public class LocalTableRecordExact
+    {
+        public int Id { get; set; }
+
+        public string Str1 { get; set; }
+
+        public int? Int1 { get; set; }
+
+        public bool? Bool1 { get; set; }
+
+        public string Str2 { get; set; }
+
+        public int? Int2 { get; set; }
+
+        public int Int3 { get; set; }
+
+        public static List<LocalTableRecordExact> GetData()
+        {
+            var recs = new List<LocalTableRecordExact>();
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 1,
+                    Str1 = "Str1a",
+                    Int1 = 101,
+                    Bool1 = true,
+                    Str2 = "Str2a"
+                });
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 2,
+                    Str1 = "Str1b",
+                    Int1 = 102,
+                    Bool1 = false,
+                    Str2 = "Str2b"
+                });
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 3,
+                    Str1 = "Str1c",
+                    Int1 = 103,
+                    Bool1 = true,
+                    Str2 = "Str2c"
+                });
+            return recs;
+        }
     }
 
     public class LocalTableRecord

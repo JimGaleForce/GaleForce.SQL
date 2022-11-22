@@ -422,6 +422,39 @@ namespace GaleForce.SQL.SQLServer
         }
 
         /// <summary>
+        /// Uses a temp table and bulk copy.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="useBulkCopy">if set to <c>true</c> [use bulk copy].</param>
+        /// <returns>SimpleSqlBuilder&lt;TRecord&gt;.</returns>
+        public static SimpleSqlBuilder<TRecord> UseTempTable<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            string optionalFilename = null)
+        {
+            UseBulkCopy(ssBuilder);
+            ssBuilder.Metadata["UseTempTable"] = true;
+            ssBuilder.Metadata["TempTableName"] = optionalFilename;
+            return ssBuilder;
+        }
+
+        /// <summary>
+        /// Uses a temp table and bulk copy.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the t record.</typeparam>
+        /// <param name="ssBuilder">The ss builder.</param>
+        /// <param name="useBulkCopy">if set to <c>true</c> [use bulk copy].</param>
+        /// <returns>SimpleSqlBuilder&lt;TRecord&gt;.</returns>
+        public static SimpleSqlBuilder<TRecord> UseMinTempTable<TRecord>(
+            this SimpleSqlBuilder<TRecord> ssBuilder,
+            string optionalFilename = null)
+        {
+            UseTempTable(ssBuilder, optionalFilename);
+            ssBuilder.Metadata["UseMinTempTable"] = true;
+            return ssBuilder;
+        }
+
+        /// <summary>
         /// Executes SQL on a SimpleSqlBuilder, using a connection.
         /// </summary>
         /// <typeparam name="TRecord">The type of the record.</typeparam>
@@ -496,11 +529,17 @@ namespace GaleForce.SQL.SQLServer
             StageLogger log = null,
             int timeoutSecondsDefault = 600)
         {
-            if (ssBuilder.Command == "INSERT"
-                &&
-                ssBuilder.Metadata.ContainsKey("UseBulkCopy")
-                &&
-                (bool) ssBuilder.Metadata["UseBulkCopy"])
+            var isBulkCopy = ssBuilder.Metadata.ContainsKey("UseBulkCopy") &&
+                (bool) ssBuilder.Metadata["UseBulkCopy"];
+            var isTempTable = ssBuilder.Metadata.ContainsKey("UseTempTable") &&
+                (bool) ssBuilder.Metadata["UseTempTable"];
+            var isMinTempTable = ssBuilder.Metadata.ContainsKey("UseMinTempTable") &&
+                (bool) ssBuilder.Metadata["UseMinTempTable"] &&
+                ssBuilder.Command == "UPDATE" &&
+                ssBuilder.Updates != null &&
+                ssBuilder.Updates.Count() > 0;
+
+            if ((ssBuilder.Command == "INSERT" && isBulkCopy) || (ssBuilder.Command == "UPDATE" && isTempTable))
             {
                 int bulkSize = ssBuilder.Metadata.ContainsKey("BulkCopySize")
                     ? (int) ssBuilder.Metadata["BulkCopySize"]
@@ -512,11 +551,93 @@ namespace GaleForce.SQL.SQLServer
                     int.TryParse(ssBuilder.Metadata["TimeoutInSeconds"].ToString(), out timeout);
                 }
 
-                return await ssBuilder.ExecuteBulkCopy(
+                var prevTableName = ssBuilder.TableName;
+                var prevCommand = ssBuilder.Command;
+                string tempTableName = null;
+
+                if (isTempTable)
+                {
+                    // switch to temptable for insert
+                    tempTableName = (ssBuilder.Metadata.ContainsKey("TempTableName")
+                            ?
+                        (string) ssBuilder.Metadata["TempTableName"]
+                            : null) ??
+                        prevTableName +
+                        "*";
+                    if (tempTableName.Contains("*"))
+                    {
+                        tempTableName = tempTableName.Replace("*", Guid.NewGuid().ToString().Substring(24));
+                    }
+
+                    ssBuilder.OverrideTableName(tempTableName);
+
+                    if (isMinTempTable)
+                    {
+                        var columnsInfo = GetTableColumns(GetColumnInfo(ssBuilder, log, ssBuilder.Updates));
+                        var cols = string.Join(", ", columnsInfo);
+                        var createSql = $"CREATE TABLE {tempTableName} ({cols}) ON [PRIMARY]";
+                        Console.WriteLine(createSql);
+
+                        var resultCreate = await Utils.SqlExecuteNonQuery(
+                            createSql,
+                            connection,
+                            timeoutSeconds: timeoutSecondsDefault);
+
+                        ssBuilder.OverrideFields(ssBuilder.Updates);
+                    }
+                    else
+                    {
+                        var copySql = $"SELECT * INTO {tempTableName} FROM {prevTableName} WHERE 1=0;";
+                        var resultCopy = await Utils.SqlExecuteNonQuery(
+                            copySql,
+                            connection,
+                            timeoutSeconds: timeoutSecondsDefault);
+                    }
+
+                    if (ssBuilder.Command == "UPDATE")
+                    {
+                        ssBuilder.OverrideCommand("INSERT");
+                    }
+                }
+
+                var result = await ssBuilder.ExecuteBulkCopy(
                     connection,
                     log: log,
                     bulkSize: bulkSize,
                     timeoutInSeconds: timeout);
+
+                if (isTempTable)
+                {
+                    // merge from temp
+                    ssBuilder.OverrideTableName(null);
+                    ssBuilder.OverrideCommand(null);
+                    ssBuilder.OverrideFields(null);
+
+                    SimpleSqlBuilder<TRecord> ssbMerge = null;
+                    if (prevCommand == "UPDATE")
+                    {
+                        ssbMerge = new SimpleSqlBuilder<TRecord>(tempTableName)
+                            .MergeInto(ssBuilder.TableName)
+                            .If(ssBuilder.MatchKey1 != null, s => s.Match(ssBuilder.MatchKey1))
+                            .If(ssBuilder.MatchKey2 != null, s => s.Match(ssBuilder.MatchKey2))
+                            .WhenMatched(s => s.Update(ssBuilder.UpdateExpressions));
+                    }
+                    else if (prevCommand == "INSERT")
+                    {
+                        ssbMerge = new SimpleSqlBuilder<TRecord>(ssBuilder.TableName)
+                            .Insert(s => s.From(tempTableName).Select());
+                    }
+
+                    var result2 = await ExecuteSQLNonQuery(ssbMerge, connection, log, timeoutSecondsDefault);
+                    var dropSql = $"DROP TABLE {tempTableName};";
+                    var resultDrop = await Utils.SqlExecuteNonQuery(
+                        dropSql,
+                        connection,
+                        timeoutSeconds: timeoutSecondsDefault);
+                    return result2;
+                }
+
+                return result;
             }
             else
             {
@@ -555,6 +676,57 @@ namespace GaleForce.SQL.SQLServer
             }
         }
 
+        private static List<string> GetTableColumns(List<ColumnInfo> columns)
+        {
+            var list = new List<string>();
+            foreach (var col in columns)
+            {
+                var type = SqlHelpers.GetBetterPropTypeName(col.Property).Replace("?", "");
+                var cType = "";
+                switch (type)
+                {
+                    case "string":
+                        cType = "[varchar](MAX)";
+                        break;
+                    case "bool":
+                        cType = "[bit]";
+                        break;
+                    case "double":
+                        cType = "[float]";
+                        break;
+                    default:
+                        cType = $"[{type}]";
+                        break;
+                }
+
+                var nullable = col.IsNullable ? "NULL" : "NOT NULL";
+                list.Add($"[{col.Name}] {cType} {nullable}");
+            }
+
+            return list;
+        }
+
+        private static List<ColumnInfo> GetColumnInfo<TRecord>(
+            SimpleSqlBuilder<TRecord> ssBuilder,
+            StageLogger log,
+            List<string> fields = null)
+        {
+            if (fields == null)
+            {
+                fields = ssBuilder.Inserts;
+            }
+
+            var props = ssBuilder.GetNonIgnoreProperties<TRecord>();
+
+            if (fields.Count == 0)
+            {
+                // fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
+                fields = ssBuilder.FieldList(ssBuilder.Fields);
+            }
+
+            return GetColumnInfo(log, fields, props);
+        }
+
         /// <summary>
         /// Executes the a bulk copy on insert fields.
         /// </summary>
@@ -577,16 +749,8 @@ namespace GaleForce.SQL.SQLServer
             using (var sqllog = log?.Item("sql.bulkcopy." + sql.GetHashCode(), "SQL"))
             {
                 sqllog?.AddEvent("SQL", sql);
-                var fields = ssBuilder.Inserts;
-
-                if (fields.Count == 0)
-                {
-                    // fields = typeof(TRecord).GetProperties().Select(p => p.Name).ToList();
-                    fields = ssBuilder.FieldList(ssBuilder.Fields);
-                }
 
                 var type = typeof(TRecord);
-                var props = ssBuilder.GetNonIgnoreProperties<TRecord>();
 
                 var dt = new DataTable();
                 var fieldProps = new List<PropertyInfo>();
@@ -595,37 +759,19 @@ namespace GaleForce.SQL.SQLServer
                 var values = hasValues ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList() : null;
 
                 log?.Log("Fields:", StageLevel.Trace);
-                foreach (var originalField in fields)
+
+                var columnsInfo = GetColumnInfo(ssBuilder, log);
+
+                foreach (var columnInfo in columnsInfo)
                 {
-                    var field = originalField.Contains(".")
-                        ? originalField.Substring(originalField.IndexOf(".") + 1)
-                        : originalField;
-                    var property = props.FirstOrDefault(p => p.Name == field);
-                    if (property != null)
+                    var col = new DataColumn(columnInfo.Name, columnInfo.Type);
+                    if (columnInfo.IsNullable)
                     {
-                        var isNullable = false;
-                        Type propertyType = property.PropertyType;
-                        if (propertyType.IsGenericType &&
-                            propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                        {
-                            propertyType = Nullable.GetUnderlyingType(propertyType);
-                            isNullable = true;
-                        }
-
-                        var col = new DataColumn(property.Name, propertyType);
-                        if (isNullable)
-                        {
-                            col.AllowDBNull = isNullable;
-                        }
-
-                        dt.Columns.Add(col);
-                        fieldProps.Add(property);
-                        log?.Log($"  orig={originalField}, field={field}, type={propertyType.Name}", StageLevel.Trace);
+                        col.AllowDBNull = columnInfo.IsNullable;
                     }
-                    else
-                    {
-                        log?.Log($"  orig={originalField}, field={field}, property is null", StageLevel.Trace);
-                    }
+
+                    dt.Columns.Add(col);
+                    fieldProps.Add(columnInfo.Property);
                 }
 
                 var source = ssBuilder.SourceData;
@@ -637,10 +783,10 @@ namespace GaleForce.SQL.SQLServer
                 {
                     await destConn.OpenAsync();
                     var bulkCopy = new SqlBulkCopy(destConn)
-                {
-                    DestinationTableName = ssBuilder.TableName,
-                    BulkCopyTimeout = timeoutInSeconds                   
-                };
+                    {
+                        DestinationTableName = ssBuilder.TableName,
+                        BulkCopyTimeout = timeoutInSeconds
+                    };
 
                     dt.Columns
                         .Cast<DataColumn>()
@@ -695,5 +841,56 @@ namespace GaleForce.SQL.SQLServer
                 return count;
             }
         }
+
+        private static List<ColumnInfo> GetColumnInfo(StageLogger log, List<string> fields, PropertyInfo[] props)
+        {
+            var columns = new List<ColumnInfo>();
+            foreach (var originalField in fields)
+            {
+                var field = originalField.Contains(".")
+                    ? originalField.Substring(originalField.IndexOf(".") + 1)
+                    : originalField;
+                var property = props.FirstOrDefault(p => p.Name == field);
+                if (property != null)
+                {
+                    var isNullable = false;
+                    Type propertyType = property.PropertyType;
+                    if (propertyType.IsGenericType &&
+                        propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        propertyType = Nullable.GetUnderlyingType(propertyType);
+                        isNullable = true;
+                    }
+
+                    columns.Add(
+                        new ColumnInfo
+                        {
+                            Name = property.Name,
+                            IsNullable = isNullable,
+                            Type = propertyType,
+                            Property = property
+                        });
+
+                    log?.Log($"  orig={originalField}, field={field}, type={propertyType.Name}", StageLevel.Trace);
+                }
+                else
+                {
+                    log?.Log($"  orig={originalField}, field={field}, property is null", StageLevel.Trace);
+                }
+            }
+
+            return columns;
+        }
+    }
+
+    public class ColumnInfo
+    {
+        public string Name { get; set; }
+
+        public Type Type { get; set; }
+
+        public bool IsNullable { get; set; }
+
+        public PropertyInfo Property { get; set; }
     }
 }
