@@ -49,6 +49,8 @@ namespace GaleForce.SQL.SQLServer
 
         public StageLogger StageLogger { get; set; } = null;
 
+        public bool IsTracing { get; set; } = false;
+
         /// <summary>
         /// Gets or sets a value indicating whether this instance is local (testing) or otherwise a
         /// SQL connection.

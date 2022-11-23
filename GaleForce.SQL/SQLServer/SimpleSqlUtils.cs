@@ -9,6 +9,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using GaleForceCore.Builders;
 using GaleForceCore.Helpers;
@@ -51,7 +52,21 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
+
+                        StringBuilder sb = null;
+                        if (context.IsTracing)
+                        {
+                            sb = new StringBuilder();
+                            ssBuilder.TraceTo(sb);
+                        }
+
                         var result = ssBuilder.Execute(data);
+
+                        if (context.IsTracing)
+                        {
+                            log?.Log(sb.ToString());
+                        }
+
                         sqllog?.AddMetric("SQLCount", result.Count());
                         return result;
                     }
@@ -124,7 +139,21 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
+
+                        StringBuilder sb = null;
+                        if (context.IsTracing)
+                        {
+                            sb = new StringBuilder();
+                            ssBuilder.TraceTo(sb);
+                        }
+
                         var result = ssBuilder.Execute(data1, data2);
+
+                        if (context.IsTracing)
+                        {
+                            log?.Log(sb.ToString());
+                        }
+
                         sqllog?.AddMetric("SQLCount", result.Count());
                         return result;
                     }
@@ -211,7 +240,21 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
+
+                        StringBuilder sb = null;
+                        if (context.IsTracing)
+                        {
+                            sb = new StringBuilder();
+                            ssBuilder.TraceTo(sb);
+                        }
+
                         var result = ssBuilder.Execute(data1, data2, data3);
+
+                        if (context.IsTracing)
+                        {
+                            log?.Log(sb.ToString());
+                        }
+
                         sqllog?.AddMetric("SQLCount", result.Count());
                         return result;
                     }
@@ -314,7 +357,21 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql.select." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
+
+                        StringBuilder sb = null;
+                        if (context.IsTracing)
+                        {
+                            sb = new StringBuilder();
+                            ssBuilder.TraceTo(sb);
+                        }
+
                         var result = ssBuilder.Execute(data1, data2, data3, data4);
+
+                        if (context.IsTracing)
+                        {
+                            log?.Log(sb.ToString());
+                        }
+
                         sqllog?.AddMetric("SQLCount", result.Count());
                         return result;
                     }
@@ -389,7 +446,21 @@ namespace GaleForce.SQL.SQLServer
                     using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
+
+                        StringBuilder sb = null;
+                        if (context.IsTracing)
+                        {
+                            sb = new StringBuilder();
+                            ssBuilder.TraceTo(sb);
+                        }
+
                         var result = ssBuilder.ExecuteNonQuery(data, sourceData);
+
+                        if (context.IsTracing)
+                        {
+                            log?.Log(sb.ToString());
+                        }
+
                         sqllog?.AddMetric("SQLCount", result);
                         return result;
                     }

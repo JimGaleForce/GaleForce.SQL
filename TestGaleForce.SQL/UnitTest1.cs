@@ -9,6 +9,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace TestGaleForce.SQL
 {
+    using GaleForceCore.Logger;
+
     [TestClass]
     public class UnitTest1
     {
@@ -447,6 +449,35 @@ namespace TestGaleForce.SQL
                 .ToList();
 
             Assert.IsTrue(list[0].Int1 != null);
+        }
+
+        [TestMethod]
+        public void TestSelectExecute3Tracing()
+        {
+            var context = new SimpleSqlBuilderContext();
+            context.StageLogger = new StageLogger().AddCollector();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var source2 = LocalTableRecord.GetData();
+            source2[0].Int1 = 100;
+            context.SetTable(LocalTableRecord.TableName + "2", source2);
+
+            var source3 = LocalTableRecord.GetData();
+            source3[0].Int1 = 200;
+            context.SetTable(LocalTableRecord.TableName + "3", source3);
+            context.IsTracing = true;
+
+            var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord>()
+                .From(LocalTableRecord.TableName, LocalTableRecord.TableName + "2", LocalTableRecord.TableName + "3")
+                .InnerJoin12On((a, b) => a.Id == b.Id)
+                .InnerJoin13On((a, b) => a.Id == b.Id)
+                .Select((a, b, c) => a.Id, (a, b, c) => b.Str1, (a, b, c) => c.Int1)
+                .Execute(context)
+                .ToList();
+
+            Assert.IsTrue(context.StageLogger.Collector.Items[1].Item.Message.Length > 0);
         }
     }
 
