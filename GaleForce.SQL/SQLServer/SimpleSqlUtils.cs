@@ -73,8 +73,7 @@ namespace GaleForce.SQL.SQLServer
                 }
                 else
                 {
-                    throw new MissingDataTableException(
-                        $"{tableName} needs to exist for testing in SimpleSqlBuilder");
+                    throw new MissingDataTableException($"{tableName} needs to exist for testing in SimpleSqlBuilder");
                 }
             }
             else
@@ -394,7 +393,7 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="context">The context.</param>
         /// <returns>System.Int32.</returns>
         /// <exception cref="GaleForce.SQL.SQLServer.MissingDataTableException"></exception>
-        public static async Task<int> ExecuteNonQuery<TRecord>(
+        public static async Task<int> ExecuteNonQueryAsync<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             SimpleSqlBuilderContext context,
             StageLogger log = null)
@@ -473,7 +472,7 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return await ssBuilder.ExecuteSQLNonQuery(context.Connection, log: log, context.TimeoutInSeconds);
+                return await ssBuilder.ExecuteSQLNonQueryAsync(context.Connection, log: log, context.TimeoutInSeconds);
             }
         }
 
@@ -594,14 +593,13 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="ssBuilder">The SimpleSqlBuilder builder.</param>
         /// <param name="connection">The connection.</param>
         /// <returns>IEnumerable&lt;TRecord&gt;.</returns>
-        public static async Task<int> ExecuteSQLNonQuery<TRecord>(
+        public static async Task<int> ExecuteSQLNonQueryAsync<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             string connection,
             StageLogger log = null,
             int timeoutSecondsDefault = 600)
         {
-            var isBulkCopy = ssBuilder.Metadata.ContainsKey("UseBulkCopy") &&
-                (bool) ssBuilder.Metadata["UseBulkCopy"];
+            var isBulkCopy = ssBuilder.Metadata.ContainsKey("UseBulkCopy") && (bool) ssBuilder.Metadata["UseBulkCopy"];
             var isTempTable = ssBuilder.Metadata.ContainsKey("UseTempTable") &&
                 (bool) ssBuilder.Metadata["UseTempTable"];
             var isMinTempTable = ssBuilder.Metadata.ContainsKey("UseMinTempTable") &&
@@ -630,8 +628,7 @@ namespace GaleForce.SQL.SQLServer
                 {
                     // switch to temptable for insert
                     tempTableName = (ssBuilder.Metadata.ContainsKey("TempTableName")
-                            ?
-                        (string) ssBuilder.Metadata["TempTableName"]
+                            ? (string) ssBuilder.Metadata["TempTableName"]
                             : null) ??
                         prevTableName +
                         "*";
@@ -671,7 +668,7 @@ namespace GaleForce.SQL.SQLServer
                     }
                 }
 
-                var result = await ssBuilder.ExecuteBulkCopy(
+                var result = await ssBuilder.ExecuteBulkCopyAsync(
                     connection,
                     log: log,
                     bulkSize: bulkSize,
@@ -699,7 +696,7 @@ namespace GaleForce.SQL.SQLServer
                             .Insert(s => s.From(tempTableName).Select());
                     }
 
-                    var result2 = await ExecuteSQLNonQuery(ssbMerge, connection, log, timeoutSecondsDefault);
+                    var result2 = await ExecuteSQLNonQueryAsync(ssbMerge, connection, log, timeoutSecondsDefault);
                     var dropSql = $"DROP TABLE {tempTableName};";
                     var resultDrop = await Utils.SqlExecuteNonQuery(
                         dropSql,
@@ -752,8 +749,8 @@ namespace GaleForce.SQL.SQLServer
             var list = new List<string>();
             foreach (var col in columns)
             {
-                var type = SqlHelpers.GetBetterPropTypeName(col.Property).Replace("?", "");
-                var cType = "";
+                var type = SqlHelpers.GetBetterPropTypeName(col.Property).Replace("?", string.Empty);
+                var cType = string.Empty;
                 switch (type)
                 {
                     case "string":
@@ -808,7 +805,7 @@ namespace GaleForce.SQL.SQLServer
         /// <param name="retries">The retries.</param>
         /// <param name="timeoutInSeconds">The timeout in seconds (per copy).</param>
         /// <returns>System.Int32.</returns>
-        public static async Task<int> ExecuteBulkCopy<TRecord>(
+        public static async Task<int> ExecuteBulkCopyAsync<TRecord>(
             this SimpleSqlBuilder<TRecord> ssBuilder,
             string connection,
             int bulkSize = 50000,
@@ -863,8 +860,8 @@ namespace GaleForce.SQL.SQLServer
                         .Cast<DataColumn>()
                         .ToList()
                         .ForEach(
-                            col =>
-                    bulkCopy.ColumnMappings.Add(new SqlBulkCopyColumnMapping(col.ColumnName, col.ColumnName)));
+                            col => bulkCopy.ColumnMappings
+                                .Add(new SqlBulkCopyColumnMapping(col.ColumnName, col.ColumnName)));
 
                     foreach (var group in groupedData)
                     {
@@ -926,8 +923,7 @@ namespace GaleForce.SQL.SQLServer
                 {
                     var isNullable = false;
                     Type propertyType = property.PropertyType;
-                    if (propertyType.IsGenericType &&
-                        propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
                     {
                         propertyType = Nullable.GetUnderlyingType(propertyType);
                         isNullable = true;

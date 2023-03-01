@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using GaleForceCore.Helpers;
@@ -340,6 +341,45 @@ namespace GaleForce.SQL.SQLServer
             builder.Password = password;
             builder.UserID = userID;
             return builder.ConnectionString;
+        }
+
+        /// <summary>
+        /// Gets a record list.
+        /// </summary>
+        /// <typeparam name="T">Record type.</typeparam>
+        /// <param name="records">DataRow records to convert to T records.</param>
+        /// <returns>List&lt;T&gt;.</returns>
+        public static IEnumerable<T> GetRecords<T>(IEnumerable<DataRow> records)
+        {
+            var results = new List<T>();
+            if (records.Count() == 0)
+            {
+                return results;
+            }
+
+            var columns = new List<string>();
+            foreach (var column in records.First().Table.Columns.Cast<DataColumn>())
+            {
+                columns.Add(column.ColumnName);
+            }
+
+            var props = typeof(T).GetProperties();
+
+            foreach (var record in records)
+            {
+                var newRecord = (T)Activator.CreateInstance(typeof(T));
+                foreach (var prop in props)
+                {
+                    if (columns.Contains(prop.Name))
+                    {
+                        Utils.SetValue<T>(record, newRecord, prop);
+                    }
+                }
+
+                results.Add(newRecord);
+            }
+
+            return results;
         }
     }
 }
