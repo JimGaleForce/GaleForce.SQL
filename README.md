@@ -96,6 +96,16 @@ To perform a bulk copy operation, use the following code:
 
 ```csharp
 var connection = LocalConnection();
+var context = new SimpleSqlBuilderContext(connection);
+
+var data = LocalTableRecord.GetData();
+var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+    .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
+    .UseBulkCopy(context);
+```
+
+```csharp
+var connection = LocalConnection();
 var data = LocalTableRecord.GetData();
 var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
     .Insert(data, l => l.Id, l => l.Str1, l => l.Int1)
