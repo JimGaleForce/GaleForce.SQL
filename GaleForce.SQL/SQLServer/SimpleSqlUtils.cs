@@ -73,7 +73,8 @@ namespace GaleForce.SQL.SQLServer
                 }
                 else
                 {
-                    throw new MissingDataTableException($"{tableName} needs to exist for testing in SimpleSqlBuilder");
+                    throw new MissingDataTableException(
+                        $"{tableName} needs to exist for testing in SimpleSqlBuilder");
                 }
             }
             else
@@ -442,7 +443,9 @@ namespace GaleForce.SQL.SQLServer
                     }
 
                     var sql = ssBuilder.Build();
-                    using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
+                    using (var sqllog = log?.Item(
+                        "sql." + ssBuilder.Command + "." + sql.GetHashCode(),
+                        "SQL"))
                     {
                         sqllog?.AddEvent("SQL", sql);
 
@@ -472,7 +475,10 @@ namespace GaleForce.SQL.SQLServer
             }
             else
             {
-                return await ssBuilder.ExecuteSQLNonQueryAsync(context.Connection, log: log, context.TimeoutInSeconds);
+                return await ssBuilder.ExecuteSQLNonQueryAsync(
+                    context.Connection,
+                    log: log,
+                    context.TimeoutInSeconds);
             }
         }
 
@@ -572,9 +578,16 @@ namespace GaleForce.SQL.SQLServer
                         var field = originalField.Contains(".")
                             ? originalField.Substring(originalField.IndexOf(".") + 1)
                             : originalField;
-                        var asField = field.Contains(" AS ") ? field.Substring(field.IndexOf(" AS ") + 4) : field;
+                        var asField = field.Contains(" AS ")
+                            ? field.Substring(field.IndexOf(" AS ") + 4)
+                            : field;
 
                         var prop = props.FirstOrDefault(p => p.Name == asField);
+                        if (prop == null)
+                        {
+                            throw new MissingFieldException(type.ToString(), asField);
+                        }
+
                         Utils.SetValue<TRecord>(record, newRecord, prop);
                     }
 
@@ -599,7 +612,8 @@ namespace GaleForce.SQL.SQLServer
             StageLogger log = null,
             int timeoutSecondsDefault = 600)
         {
-            var isBulkCopy = ssBuilder.Metadata.ContainsKey("UseBulkCopy") && (bool) ssBuilder.Metadata["UseBulkCopy"];
+            var isBulkCopy = ssBuilder.Metadata.ContainsKey("UseBulkCopy") &&
+                (bool) ssBuilder.Metadata["UseBulkCopy"];
             var isTempTable = ssBuilder.Metadata.ContainsKey("UseTempTable") &&
                 (bool) ssBuilder.Metadata["UseTempTable"];
             var isMinTempTable = ssBuilder.Metadata.ContainsKey("UseMinTempTable") &&
@@ -608,7 +622,8 @@ namespace GaleForce.SQL.SQLServer
                 ssBuilder.Updates != null &&
                 ssBuilder.Updates.Count() > 0;
 
-            if ((ssBuilder.Command == "INSERT" && isBulkCopy) || (ssBuilder.Command == "UPDATE" && isTempTable))
+            if ((ssBuilder.Command == "INSERT" && isBulkCopy) ||
+                (ssBuilder.Command == "UPDATE" && isTempTable))
             {
                 int bulkSize = ssBuilder.Metadata.ContainsKey("BulkCopySize")
                     ? (int) ssBuilder.Metadata["BulkCopySize"]
@@ -634,14 +649,17 @@ namespace GaleForce.SQL.SQLServer
                         "*";
                     if (tempTableName.Contains("*"))
                     {
-                        tempTableName = tempTableName.Replace("*", Guid.NewGuid().ToString().Substring(24));
+                        tempTableName = tempTableName.Replace(
+                            "*",
+                            Guid.NewGuid().ToString().Substring(24));
                     }
 
                     ssBuilder.OverrideTableName(tempTableName);
 
                     if (isMinTempTable)
                     {
-                        var columnsInfo = GetTableColumns(GetColumnInfo(ssBuilder, log, ssBuilder.Updates));
+                        var columnsInfo = GetTableColumns(
+                            GetColumnInfo(ssBuilder, log, ssBuilder.Updates));
                         var cols = string.Join(", ", columnsInfo);
                         var createSql = $"CREATE TABLE {tempTableName} ({cols}) ON [PRIMARY]";
                         Console.WriteLine(createSql);
@@ -696,7 +714,11 @@ namespace GaleForce.SQL.SQLServer
                             .Insert(s => s.From(tempTableName).Select());
                     }
 
-                    var result2 = await ExecuteSQLNonQueryAsync(ssbMerge, connection, log, timeoutSecondsDefault);
+                    var result2 = await ExecuteSQLNonQueryAsync(
+                        ssbMerge,
+                        connection,
+                        log,
+                        timeoutSecondsDefault);
                     var dropSql = $"DROP TABLE {tempTableName};";
                     var resultDrop = await Utils.SqlExecuteNonQuery(
                         dropSql,
@@ -710,7 +732,9 @@ namespace GaleForce.SQL.SQLServer
             else
             {
                 var sql = ssBuilder.Build();
-                using (var sqllog = log?.Item("sql." + ssBuilder.Command + "." + sql.GetHashCode(), "SQL"))
+                using (var sqllog = log?.Item(
+                    "sql." + ssBuilder.Command + "." + sql.GetHashCode(),
+                    "SQL"))
                 {
                     sqllog?.AddEvent("SQL", sql);
                     if (!string.IsNullOrEmpty(sql))
@@ -718,7 +742,9 @@ namespace GaleForce.SQL.SQLServer
                         int timeout = timeoutSecondsDefault;
                         if (ssBuilder.Metadata.ContainsKey("TimeoutInSeconds"))
                         {
-                            int.TryParse(ssBuilder.Metadata["TimeoutInSeconds"].ToString(), out timeout);
+                            int.TryParse(
+                                ssBuilder.Metadata["TimeoutInSeconds"].ToString(),
+                                out timeout);
                         }
 
                         try
@@ -726,7 +752,9 @@ namespace GaleForce.SQL.SQLServer
                             var result = await Utils.SqlExecuteNonQuery(
                                 sql,
                                 connection,
-                                parameters: ssBuilder.Options.UseParameters ? ssBuilder.GetParameters() : null,
+                                parameters: ssBuilder.Options.UseParameters
+                                    ? ssBuilder.GetParameters()
+                                    : null,
                                 timeoutSeconds: timeout);
 
                             sqllog?.AddMetric("SQLCount", result);
@@ -824,7 +852,9 @@ namespace GaleForce.SQL.SQLServer
                 var fieldProps = new List<PropertyInfo>();
 
                 var hasValues = ssBuilder.Valueset.Count() > 0;
-                var values = hasValues ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList() : null;
+                var values = hasValues
+                    ? ssBuilder.ValueExpressions.Select(v => v.Compile()).ToList()
+                    : null;
 
                 log?.Log("Fields:", StageLevel.Trace);
 
@@ -872,7 +902,9 @@ namespace GaleForce.SQL.SQLServer
                             var fieldIndex = 0;
                             foreach (var fp in fieldProps)
                             {
-                                var value = (hasValues ? values[fieldIndex].Invoke(record) : fp.GetValue(record, null)) ??
+                                var value = (hasValues
+                                        ? values[fieldIndex].Invoke(record)
+                                        : fp.GetValue(record, null)) ??
                                     DBNull.Value;
                                 columns.Add(value);
                                 ++fieldIndex;
@@ -910,7 +942,10 @@ namespace GaleForce.SQL.SQLServer
             }
         }
 
-        private static List<ColumnInfo> GetColumnInfo(StageLogger log, List<string> fields, PropertyInfo[] props)
+        private static List<ColumnInfo> GetColumnInfo(
+            StageLogger log,
+            List<string> fields,
+            PropertyInfo[] props)
         {
             var columns = new List<ColumnInfo>();
             foreach (var originalField in fields)
@@ -923,7 +958,8 @@ namespace GaleForce.SQL.SQLServer
                 {
                     var isNullable = false;
                     Type propertyType = property.PropertyType;
-                    if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    if (propertyType.IsGenericType &&
+                        propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
                     {
                         propertyType = Nullable.GetUnderlyingType(propertyType);
                         isNullable = true;
@@ -938,11 +974,15 @@ namespace GaleForce.SQL.SQLServer
                             Property = property
                         });
 
-                    log?.Log($"  orig={originalField}, field={field}, type={propertyType.Name}", StageLevel.Trace);
+                    log?.Log(
+                    $"  orig={originalField}, field={field}, type={propertyType.Name}",
+                    StageLevel.Trace);
                 }
                 else
                 {
-                    log?.Log($"  orig={originalField}, field={field}, property is null", StageLevel.Trace);
+                    log?.Log(
+                    $"  orig={originalField}, field={field}, property is null",
+                    StageLevel.Trace);
                 }
             }
 
