@@ -125,4 +125,88 @@ await new SimpleSqlBuilder<Co2_ChatHistoryMainRecord>(
     .Insert(mainChat)
     .ExecuteNonQueryAsync(context);
 
+//Updating single record, single field
+await new SimpleSqlBuilder<ActionErrorIdsMainRecord>()
+                            .From(ActionErrorIdsMainRecord.TableName)
+                            .Update(inst, i => i.LastProcessed)
+                            .Where(i => i.SourceId == inst.SourceId)
+                            .ExecuteNonQueryAsync(context);
+
+//updating single record, multiple fields:
+await new SimpleSqlBuilder<ActionErrorIdsRecord>(ActionErrorIdsRecord.TableName)
+                    .Update(
+                        item,
+                        i => i.ActionResultException,
+                        i => i.ActionResultId,
+                        i => i.ActionResultDateTime)
+                    .Where(i => i.SourceId == 1 && i.Id == item.Id && i.ocvId == item.ocvId)
+                    .ExecuteNonQueryAsync(context);
+
+//updating many records using a temp table (uses Match with source and temp references (s,t) and .UseMinTempTable())
+await new SimpleSqlBuilder<SpikeCountHoursRecord>()
+                    .From(SpikeCountHoursRecord.TableName)
+                .Update(
+                    saveData,
+                    s => s.ocvIds,
+                    s => s.rid,
+                    s => s.DateTime,
+                    s => s.Value,
+                    s => s.Interval,
+                    s => s.Channel)
+                .Match(
+                    (s, t) => s.rid == t.rid &&
+                        s.Value == t.Value &&
+                        s.DateTime == t.DateTime &&
+                        s.Interval == t.Interval &&
+                        s.Channel == t.Channel)
+                .UseMinTempTable()
+                .ExecuteNonQueryAsync(context);
+
+//merge (update and insert) into a table (uses an update variable to execute when updating):
+  var update = new Expression<Func<AlgoTextRecord, object>>[]
+            {
+                s => s.KeyText,
+                s => s.HasKeyText,
+                s => s.ProcessState
+            };
+
+var mergeInsert = await new SimpleSqlBuilder<AlgoTextRecord>("Temp" + AlgoTextRecord.TableName)
+                .MergeInto(AlgoTextRecord.TableName)
+                .Match(
+                    (s, t) => s.Id == t.Id &&
+                        s.Algo == info.Name &&
+                        t.AlgoVer == info.Version &&
+                        t.ItemStage == info.Stages &&
+                        s.Processor == processor &&
+                        s.ProcessState == info.Stages + 1)
+                .WhenMatched(s => s.Update(update))
+                .ExecuteNonQueryAsync(context.SqlContext);
+
+// another merge (insert and update)
+
+ var updateFields = new Expression<Func<ActionHistoryRecord, object>>[]
+            {
+                s => s.ActionTakenId,
+                s => s.ActionTakenDateTime,
+                s => s.TagsAdded,
+                s => s.ActionAdded
+            };
+
+            var merge = await new SimpleSqlBuilder<ActionHistoryRecord>("Temp" + ActionHistoryRecord.TableName)
+                .MergeInto(ActionHistoryRecord.TableName)
+                .Match((s, t) => s.Id == t.Id && s.ActionArea == t.ActionArea && t.ActionResultId == null)
+                .WhenMatched(ssb => ssb.Update(updateFields))
+                .WhenNotMatched(ssb => ssb.Insert())
+                .ExecuteNonQueryAsync(sqlContext);
+
+
+// Deleting
+  var deleteCount2 = await new SimpleSqlBuilder<AlgoTextRecord>("Temp" + AlgoTextRecord.TableName)
+                .Delete()
+                .Where(
+                    a => a.Algo == info.Name &&
+                        a.AlgoVer == info.Version &&
+                        a.ProcessState == info.Stages + 1 &&
+                        a.Processor == processor)
+                .ExecuteNonQueryAsync(context.SqlContext);
 
