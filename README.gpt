@@ -1,0 +1,212 @@
+# GaleForce SQL Library Cheat Sheet for GPT
+
+## Installation
+- Add as a dependency
+
+## Basic Usage
+- Context: `new SimpleSqlBuilderContext()`
+- Set table: `context.SetTable(tableName, data)`
+
+### Reading Data
+- `new SimpleSqlBuilder<T>(tableName).Select(cols).Execute(context).ToList()`
+
+### Inserting Data
+- `new SimpleSqlBuilder<T>(tableName).Insert(data, cols).ExecuteNonQueryAsync(context)`
+
+### Updating Data
+- `new SimpleSqlBuilder<T>(tableName).Match(match).Update(data, cols).ExecuteNonQueryAsync(context)`
+
+### Deleting Data
+- `new SimpleSqlBuilder<T>(tableName).Delete().Where(condition).Build()`
+
+### Merging Data
+- `new SimpleSqlBuilder<T>(tempTableName).MergeInto(tableName).Match(match).WhenMatched(update).WhenNotMatched(insert).ExecuteNonQueryAsync(context)`
+
+## Bulk Copy
+- `new SimpleSqlBuilder<T>(tableName).Insert(data, cols).UseBulkCopy(context)`
+- `new SimpleSqlBuilder<T>(tableName).Insert(data, cols).ExecuteBulkCopy(connection)`
+
+## Complex Usages
+- Join: `.InnerJoinOn((a, b) => a.Id == b.Id)`
+- InnerJoin12On: `.InnerJoin12On((a, b) => a.Id == b.Id)`
+- InnerJoin13On: `.InnerJoin13On((a, c) => a.Id == c.Id)`
+- InnerJoin23On: `.InnerJoin23On((b, c) => b.Id == c.Id)`
+- Subquery: `.Select((a, b, c) => a.Id, (a, b, c) => b.Str1, (a, b, c) => c.Int1)`
+- Conditions: `.Where((t1, t3) => t1.Int1 % 2 == 1)`
+- OrderBy/OrderByDescending: `.OrderBy(s => s.Int1).ThenByDescending(s => s.String1)`
+- Take: `.Take(10)`
+- Distinct: `.Distinct()`
+
+Join with aliases:
+new SimpleSqlBuilder<TResult, TTable1, TTable2>()
+    .From("Table1", "Table2")
+    .SelectAs(i => i.AliasedColumn1, (t1, t2) => t1.Column1)
+    .SelectAs(i => i.AliasedColumn2, (t1, t2) => t2.Column2)
+    .InnerJoinOn((t1, t2) => t1.Key == t2.Key)
+    .Where((t1, t2) => t1.Condition && t2.Condition)
+    .OrderByDescending((t1, t2) => t1.Column)
+    .Take(200)
+    .Execute(context)
+    .ToList();
+
+Example: Join tables and select aliased columns
+Define the result class with aliased columns:
+public class SpikedIssue
+{
+    public string Title { get; set; }
+    public double OcvId { get; set; }
+    public int DayCount { get; set; }
+    public double Magnitude { get; set; }
+}
+Build and execute the query:
+var result = new SimpleSqlBuilder<SpikedIssue, SpikeCountHour, Token>()
+    .From("SpikeCountHours", "Tokens")
+    .SelectAs(i => i.Title, (s, t) => t.Title)
+    .SelectAs(i => i.OcvId, (s, t) => s.Value)
+    .SelectAs(i => i.DayCount, (s, t) => s.Count)
+    .SelectAs(i => i.Magnitude, (s, t) => s.Mag)
+    .InnerJoinOn((s, t) => s.Value == t.OcvId)
+    .Where((s, t) => s.IsSpike == true && s.Interval == 24 && s.Rid == 3 && s.DateTime == dateTimeFilter && t.ItemType == 1)
+    .OrderByDescending((s, t) => s.Count)
+    .Take(200)
+    .Execute(context)
+    .ToList();
+
+## Tracing
+- Enable: `context.IsTracing = true`
+- Check trace: `context.StageLogger.Collector.Items[1].Item.Message.Length > 0`
+
+## Build SQL
+- Select: `.Build()`
+- Insert: `.Build()`
+- Update: `.Build()`
+- Delete: `.Build()`
+- Merge: `.Build()`
+
+## Rules
+1. a .Select() uses Execute(...), while .Insert(...), .Delete(...), etc, uses ExecuteNonQueryAsync(...).
+2. Currently multiple records cannot be used in .Insert(<records>) or Update without using .UseBulkCopy() also. Single records work with .Insert(<record>) or Update alone.
+3. After the .Execute(...), the value is an enumerable and follows normal LINQ usage.
+
+## Examples of correct usage
+var context = new SimpleSqlBuilderContext(this.GetConnectionString());
+
+var languages = new SimpleSqlBuilder<Co2_LanguageRecord>()
+    .From(Co2_LanguageRecord.TableName)
+    .Select()
+    .Execute(context)
+    .ToDictionary(c => c.Name, c => c);
+
+var tables = new SimpleSqlBuilder<Co2_TablesRecord>()
+    .From(Co2_TablesRecord.TableName)
+    .Select()
+    .Execute(context)
+    .GroupBy(c => c.DataSet)
+    .ToDictionary(c => c.Key, c => c.ToList());
+
+var fields = new SimpleSqlBuilder<Co2_FieldsRecord>()
+    .From(Co2_FieldsRecord.TableName)
+    .Select()
+    .Execute(context)
+    .GroupBy(c => c.TableId)
+    .ToDictionary(c => c.Key, c => c.ToList());
+
+var mainChat = new Co2_ChatHistoryMainRecord
+{
+    UserId = user.Id,
+    Created = DateTime.UtcNow,
+    ChatGuid = chat.ChatId,
+    ChatId = chatIdInt,
+    Title = title
+};
+
+await new SimpleSqlBuilder<Co2_ChatHistoryMainRecord>(
+    Co2_ChatHistoryMainRecord.TableName)
+    .Insert(mainChat)
+    .ExecuteNonQueryAsync(context);
+
+//Updating single record, single field
+await new SimpleSqlBuilder<ActionErrorIdsMainRecord>()
+                            .From(ActionErrorIdsMainRecord.TableName)
+                            .Update(inst, i => i.LastProcessed)
+                            .Where(i => i.SourceId == inst.SourceId)
+                            .ExecuteNonQueryAsync(context);
+
+//updating single record, multiple fields:
+await new SimpleSqlBuilder<ActionErrorIdsRecord>(ActionErrorIdsRecord.TableName)
+                    .Update(
+                        item,
+                        i => i.ActionResultException,
+                        i => i.ActionResultId,
+                        i => i.ActionResultDateTime)
+                    .Where(i => i.SourceId == 1 && i.Id == item.Id && i.ocvId == item.ocvId)
+                    .ExecuteNonQueryAsync(context);
+
+//updating many records using a temp table (uses Match with source and temp references (s,t) and .UseMinTempTable())
+await new SimpleSqlBuilder<SpikeCountHoursRecord>()
+                    .From(SpikeCountHoursRecord.TableName)
+                .Update(
+                    saveData,
+                    s => s.ocvIds,
+                    s => s.rid,
+                    s => s.DateTime,
+                    s => s.Value,
+                    s => s.Interval,
+                    s => s.Channel)
+                .Match(
+                    (s, t) => s.rid == t.rid &&
+                        s.Value == t.Value &&
+                        s.DateTime == t.DateTime &&
+                        s.Interval == t.Interval &&
+                        s.Channel == t.Channel)
+                .UseMinTempTable()
+                .ExecuteNonQueryAsync(context);
+
+//merge (update and insert) into a table (uses an update variable to execute when updating):
+  var update = new Expression<Func<AlgoTextRecord, object>>[]
+            {
+                s => s.KeyText,
+                s => s.HasKeyText,
+                s => s.ProcessState
+            };
+
+var mergeInsert = await new SimpleSqlBuilder<AlgoTextRecord>("Temp" + AlgoTextRecord.TableName)
+                .MergeInto(AlgoTextRecord.TableName)
+                .Match(
+                    (s, t) => s.Id == t.Id &&
+                        s.Algo == info.Name &&
+                        t.AlgoVer == info.Version &&
+                        t.ItemStage == info.Stages &&
+                        s.Processor == processor &&
+                        s.ProcessState == info.Stages + 1)
+                .WhenMatched(s => s.Update(update))
+                .ExecuteNonQueryAsync(context.SqlContext);
+
+// another merge (insert and update)
+
+ var updateFields = new Expression<Func<ActionHistoryRecord, object>>[]
+            {
+                s => s.ActionTakenId,
+                s => s.ActionTakenDateTime,
+                s => s.TagsAdded,
+                s => s.ActionAdded
+            };
+
+            var merge = await new SimpleSqlBuilder<ActionHistoryRecord>("Temp" + ActionHistoryRecord.TableName)
+                .MergeInto(ActionHistoryRecord.TableName)
+                .Match((s, t) => s.Id == t.Id && s.ActionArea == t.ActionArea && t.ActionResultId == null)
+                .WhenMatched(ssb => ssb.Update(updateFields))
+                .WhenNotMatched(ssb => ssb.Insert())
+                .ExecuteNonQueryAsync(sqlContext);
+
+
+// Deleting
+  var deleteCount2 = await new SimpleSqlBuilder<AlgoTextRecord>("Temp" + AlgoTextRecord.TableName)
+                .Delete()
+                .Where(
+                    a => a.Algo == info.Name &&
+                        a.AlgoVer == info.Version &&
+                        a.ProcessState == info.Stages + 1 &&
+                        a.Processor == processor)
+                .ExecuteNonQueryAsync(context.SqlContext);
+
