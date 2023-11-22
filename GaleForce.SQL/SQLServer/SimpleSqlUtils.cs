@@ -845,7 +845,7 @@ namespace GaleForce.SQL.SQLServer
                 var source = ssBuilder.SourceData;
                 var groupedData = source.ToArray().Split(bulkSize);
 
-                var logged = false;
+                // var logged = false;
                 var count = 0;
                 using (var destConn = new SqlConnection(connection))
                 {

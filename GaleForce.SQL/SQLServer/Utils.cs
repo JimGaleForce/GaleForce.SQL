@@ -165,6 +165,9 @@ namespace GaleForce.SQL.SQLServer
                 case "Single?":
                     prop.SetValue(newRecord, record.Field<float?>(prop.Name));
                     break;
+                case "Byte[]":
+                    prop.SetValue(newRecord, record.Field<byte[]>(prop.Name));
+                    break;
                 default:
                     if (prop.PropertyType.IsEnum)
                     {
