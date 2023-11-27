@@ -225,25 +225,43 @@ namespace TestGaleForce.SQL
             var context = new SimpleSqlBuilderContext();
             context.SetTable(LocalTableRecord.TableName, target);
 
+            target.Add(
+                new LocalTableRecord
+            {
+                Int1 = 999,
+                Id = 999
+            });
+
             var data = LocalTableRecord.GetData();
             for (var i = 0; i < data.Count; i++)
             {
                 data[i].Int1 = 1000 + i;
             }
 
+            data.Add(
+                new  LocalTableRecord
+            {
+                Int1 = 555,
+                Id = 555
+            });
+
             Assert.AreNotEqual(data[0].Int1, target[0].Int1);
             Assert.AreNotEqual(data[1].Int1, target[1].Int1);
             Assert.AreNotEqual(data[2].Int1, target[2].Int1);
+            Assert.AreNotEqual(data[3].Int1, target[3].Int1);
+            Assert.AreNotEqual(data[3].Id, target[3].Id);
 
             var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
                 .Match(l => l.Id)
                 .Update(data, l => l.Id, l => l.Str1, l => l.Int1)
                 .ExecuteNonQueryAsync(context);
 
-            Assert.AreEqual(3, target.Count);
+            Assert.AreEqual(4, target.Count);
             Assert.AreEqual(data[0].Int1, target[0].Int1);
             Assert.AreEqual(data[1].Int1, target[1].Int1);
             Assert.AreEqual(data[2].Int1, target[2].Int1);
+            Assert.AreNotEqual(data[3].Int1, target[3].Int1);
+            Assert.AreNotEqual(data[3].Id, target[3].Id);
         }
 
         [TestMethod]
@@ -439,7 +457,7 @@ namespace TestGaleForce.SQL
         // [TestMethod]
         public void TestSelectToSubClass()
         {
-            var connection = LocalConnection();
+            var connection = this.LocalConnection();
             var context = new SimpleSqlBuilderContext(connection);
 
             var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(LocalTableWithEnumsRecord.TableName)
