@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GaleForce.Core" Version="1.0.37.5" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="GaleForce.Core" Version="1.0.37.6" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
   </ItemGroup>
 
   <ItemGroup>
