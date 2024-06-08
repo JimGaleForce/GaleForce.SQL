@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -14,6 +13,7 @@ using System.Threading.Tasks;
 using GaleForceCore.Builders;
 using GaleForceCore.Helpers;
 using GaleForceCore.Logger;
+using Microsoft.Data.SqlClient;
 
 namespace GaleForce.SQL.SQLServer
 {
@@ -992,12 +992,28 @@ namespace GaleForce.SQL.SQLServer
 
     public class ColumnInfo
     {
-        public string Name { get; set; }
+        public string Name
+        {
+            get;
+            set;
+        }
 
-        public Type Type { get; set; }
+        public Type Type
+        {
+            get;
+            set;
+        }
 
-        public bool IsNullable { get; set; }
+        public bool IsNullable
+        {
+            get;
+            set;
+        }
 
-        public PropertyInfo Property { get; set; }
+        public PropertyInfo Property
+        {
+            get;
+            set;
+        }
     }
 }

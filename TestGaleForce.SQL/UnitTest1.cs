@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using GaleForce.SQL.SQLServer;
@@ -10,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace TestGaleForce.SQL
 {
     using GaleForceCore.Logger;
+    using Microsoft.Data.SqlClient;
 
     [TestClass]
     public class UnitTest1
@@ -500,39 +500,83 @@ namespace TestGaleForce.SQL
 
     public class TestRecord<T>
     {
-        public T Value { get; set; }
+        public T Value
+        {
+            get;
+            set;
+        }
     }
 
     public class LocalNewTableRecord
     {
-        public string StringX { get; set; }
+        public string StringX
+        {
+            get;
+            set;
+        }
 
-        public int IntX { get; set; }
+        public int IntX
+        {
+            get;
+            set;
+        }
     }
 
     public class LocalTableRecordSubclass : LocalTableRecord
     {
         [IgnoreField]
-        public string SomethingElse { get; set; }
+        public string SomethingElse
+        {
+            get;
+            set;
+        }
     }
 
     public class LocalTableWithEnumsRecord
     {
         public const string TableName = "LocalTable";
 
-        public int Id { get; set; }
+        public int Id
+        {
+            get;
+            set;
+        }
 
-        public string Str1 { get; set; }
+        public string Str1
+        {
+            get;
+            set;
+        }
 
-        public AnEnum Int1 { get; set; }
+        public AnEnum Int1
+        {
+            get;
+            set;
+        }
 
-        public bool? Bool1 { get; set; }
+        public bool? Bool1
+        {
+            get;
+            set;
+        }
 
-        public AnEnum Str2 { get; set; }
+        public AnEnum Str2
+        {
+            get;
+            set;
+        }
 
-        public int? Int2 { get; set; }
+        public int? Int2
+        {
+            get;
+            set;
+        }
 
-        public TokenRecordType Int3 { get; set; }
+        public TokenRecordType Int3
+        {
+            get;
+            set;
+        }
     }
 
     public enum TokenRecordType
@@ -569,19 +613,47 @@ namespace TestGaleForce.SQL
 
     public class LocalTableRecordExact
     {
-        public int Id { get; set; }
+        public int Id
+        {
+            get;
+            set;
+        }
 
-        public string Str1 { get; set; }
+        public string Str1
+        {
+            get;
+            set;
+        }
 
-        public int? Int1 { get; set; }
+        public int? Int1
+        {
+            get;
+            set;
+        }
 
-        public bool? Bool1 { get; set; }
+        public bool? Bool1
+        {
+            get;
+            set;
+        }
 
-        public string Str2 { get; set; }
+        public string Str2
+        {
+            get;
+            set;
+        }
 
-        public int? Int2 { get; set; }
+        public int? Int2
+        {
+            get;
+            set;
+        }
 
-        public int Int3 { get; set; }
+        public int Int3
+        {
+            get;
+            set;
+        }
 
         public static List<LocalTableRecordExact> GetData()
         {
@@ -597,17 +669,41 @@ namespace TestGaleForce.SQL
     {
         public const string TableName = "LocalTable";
 
-        public int Id { get; set; }
+        public int Id
+        {
+            get;
+            set;
+        }
 
-        public string Str1 { get; set; }
+        public string Str1
+        {
+            get;
+            set;
+        }
 
-        public int? Int1 { get; set; }
+        public int? Int1
+        {
+            get;
+            set;
+        }
 
-        public bool? Bool1 { get; set; }
+        public bool? Bool1
+        {
+            get;
+            set;
+        }
 
-        public string Str2 { get; set; }
+        public string Str2
+        {
+            get;
+            set;
+        }
 
-        public int? Int2 { get; set; }
+        public int? Int2
+        {
+            get;
+            set;
+        }
 
         public static List<LocalTableRecord> GetData()
         {
