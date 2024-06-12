@@ -28,13 +28,19 @@ namespace TestGaleForce.SQL
         [TestMethod]
         public void TestSetValueDecimal()
         {
-            Assert.AreEqual((decimal) 123.4, TestValue<decimal>((decimal) 123.4), "Decimal not interpreted properly");
+            Assert.AreEqual(
+                (decimal) 123.4,
+                TestValue<decimal>((decimal) 123.4),
+                "Decimal not interpreted properly");
         }
 
         [TestMethod]
         public void TestSetValueFloat()
         {
-            Assert.AreEqual((float) 123.4, TestValue<float>((float)123.4), "Float not interpreted properly");
+            Assert.AreEqual(
+                (float) 123.4,
+                TestValue<float>((float)123.4),
+                "Float not interpreted properly");
         }
 
         [TestMethod]
@@ -279,9 +285,12 @@ namespace TestGaleForce.SQL
                 source[i].Int1 = 1000 + i;
             }
 
-            context.SetTable(LocalTableRecord.TableName + "_temp", source as IEnumerable<LocalTableRecord>);
+            context.SetTable(
+                LocalTableRecord.TableName + "_temp",
+                source as IEnumerable<LocalTableRecord>);
 
-            var sql = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName + "_temp")
+            var sql = await new SimpleSqlBuilder<LocalTableRecord>(
+                LocalTableRecord.TableName + "_temp")
                 .MergeInto(LocalTableRecord.TableName)
                 .Match(l => l.Id)
                 .WhenMatched(s => s.Update(l => l.Id, l => l.Str1, l => l.Int1))
@@ -358,7 +367,10 @@ namespace TestGaleForce.SQL
             context.SetTable(LocalTableRecord.TableName + "3", source3);
 
             var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord>()
-                .From(LocalTableRecord.TableName, LocalTableRecord.TableName + "2", LocalTableRecord.TableName + "3")
+                .From(
+                    LocalTableRecord.TableName,
+                    LocalTableRecord.TableName + "2",
+                    LocalTableRecord.TableName + "3")
                 .InnerJoin12On((a, b) => a.Id == b.Id)
                 .InnerJoin13On((a, b) => a.Id == b.Id)
                 .Select((a, b, c) => a.Id, (a, b, c) => b.Str1, (a, b, c) => c.Int1)
@@ -423,7 +435,8 @@ namespace TestGaleForce.SQL
 
             context.SetTable("Destination", new List<LocalTableRecord>());
 
-            var updatedLocalRecords = await new SimpleSqlBuilder<LocalTableRecord>(LocalTableRecord.TableName)
+            var updatedLocalRecords = await new SimpleSqlBuilder<LocalTableRecord>(
+                LocalTableRecord.TableName)
                 .MergeInto("Destination")
                 .Match((t, p) => t.Id == p.Id)
                 .WhenMatched(s => s.Update(p => p.Str1))
@@ -460,7 +473,8 @@ namespace TestGaleForce.SQL
             var connection = this.LocalConnection();
             var context = new SimpleSqlBuilderContext(connection);
 
-            var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(LocalTableWithEnumsRecord.TableName)
+            var list = new SimpleSqlBuilder<LocalTableWithEnumsRecord>(
+                LocalTableWithEnumsRecord.TableName)
             .Select()
                 .Execute(context)
                 .ToList();
@@ -487,7 +501,10 @@ namespace TestGaleForce.SQL
             context.IsTracing = true;
 
             var data = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord, LocalTableRecord>()
-                .From(LocalTableRecord.TableName, LocalTableRecord.TableName + "2", LocalTableRecord.TableName + "3")
+                .From(
+                    LocalTableRecord.TableName,
+                    LocalTableRecord.TableName + "2",
+                    LocalTableRecord.TableName + "3")
                 .InnerJoin12On((a, b) => a.Id == b.Id)
                 .InnerJoin13On((a, b) => a.Id == b.Id)
                 .Select((a, b, c) => a.Id, (a, b, c) => b.Str1, (a, b, c) => c.Int1)
@@ -495,6 +512,34 @@ namespace TestGaleForce.SQL
                 .ToList();
 
             Assert.IsTrue(context.StageLogger.Collector.Items[1].Item.Message.Length > 0);
+        }
+
+        [TestMethod]
+        public void TestJoinWhere()
+        {
+            var context = new SimpleSqlBuilderContext();
+
+            var source = LocalTableRecord.GetData();
+            context.SetTable(LocalTableRecord.TableName, source);
+
+            var source2 = LocalTableRecord.GetData();
+            source2[0].Int1 = 100;
+            context.SetTable(LocalTableRecord.TableName + "2", source2);
+
+            var source3 = LocalTableRecord.GetData();
+            source3[0].Int1 = 200;
+            context.SetTable(LocalTableRecord.TableName + "3", source3);
+            context.IsTracing = true;
+
+            var results = new SimpleSqlBuilder<LocalTableRecord, LocalTableRecord, LocalTableRecord>()
+                .From(LocalTableRecord.TableName, LocalTableRecord.TableName)
+                .Select((a, t) => a.Id, (a, t) => a.Str1)
+                .InnerJoinOn((a, t) => a.Id == t.Id)
+                .Where((a, t) => t.Str1.Contains("a"))
+                .Execute(context)
+                .ToList();
+
+            var i = 0;
         }
     }
 
@@ -658,9 +703,33 @@ namespace TestGaleForce.SQL
         public static List<LocalTableRecordExact> GetData()
         {
             var recs = new List<LocalTableRecordExact>();
-            recs.Add(new LocalTableRecordExact { Id = 1, Str1 = "Str1a", Int1 = 101, Bool1 = true, Str2 = "Str2a" });
-            recs.Add(new LocalTableRecordExact { Id = 2, Str1 = "Str1b", Int1 = 102, Bool1 = false, Str2 = "Str2b" });
-            recs.Add(new LocalTableRecordExact { Id = 3, Str1 = "Str1c", Int1 = 103, Bool1 = true, Str2 = "Str2c" });
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 1,
+                    Str1 = "Str1a",
+                    Int1 = 101,
+                    Bool1 = true,
+                    Str2 = "Str2a"
+                });
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 2,
+                    Str1 = "Str1b",
+                    Int1 = 102,
+                    Bool1 = false,
+                    Str2 = "Str2b"
+                });
+            recs.Add(
+                new LocalTableRecordExact
+                {
+                    Id = 3,
+                    Str1 = "Str1c",
+                    Int1 = 103,
+                    Bool1 = true,
+                    Str2 = "Str2c"
+                });
             return recs;
         }
     }
@@ -708,9 +777,33 @@ namespace TestGaleForce.SQL
         public static List<LocalTableRecord> GetData()
         {
             var recs = new List<LocalTableRecord>();
-            recs.Add(new LocalTableRecord { Id = 1, Str1 = "Str1a", Int1 = 101, Bool1 = true, Str2 = "Str2a" });
-            recs.Add(new LocalTableRecord { Id = 2, Str1 = "Str1b", Int1 = 102, Bool1 = false, Str2 = "Str2b" });
-            recs.Add(new LocalTableRecord { Id = 3, Str1 = "Str1c", Int1 = 103, Bool1 = true, Str2 = "Str2c" });
+            recs.Add(
+                new LocalTableRecord
+                {
+                    Id = 1,
+                    Str1 = "Str1a",
+                    Int1 = 101,
+                    Bool1 = true,
+                    Str2 = "Str2a"
+                });
+            recs.Add(
+                new LocalTableRecord
+                {
+                    Id = 2,
+                    Str1 = "Str1b",
+                    Int1 = 102,
+                    Bool1 = false,
+                    Str2 = "Str2b"
+                });
+            recs.Add(
+                new LocalTableRecord
+                {
+                    Id = 3,
+                    Str1 = "Str1c",
+                    Int1 = 103,
+                    Bool1 = true,
+                    Str2 = "Str2c"
+                });
             return recs;
         }
     }
